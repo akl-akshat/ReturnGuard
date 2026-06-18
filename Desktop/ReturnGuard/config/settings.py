@@ -17,6 +17,7 @@ secret check (``settings.validate_runtime()``) then fails fast if a secret is mi
 
 from __future__ import annotations
 
+from datetime import date
 from functools import lru_cache
 from typing import Literal
 
@@ -103,6 +104,12 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
 
+    # ------------------------------------------------------------------ clock
+    # ISO date override used for return-window math. Empty -> real today(). The eval
+    # harness pins this to the dataset reference date so window classification is
+    # deterministic regardless of wall-clock time (FR-POL-3).
+    AS_OF_DATE: str = ""
+
     # ------------------------------------------------------------ validators
     @field_validator("MAX_COUPON_PCT")
     @classmethod
@@ -127,6 +134,11 @@ class Settings(BaseSettings):
     @property
     def use_stub_llm(self) -> bool:
         return self.LLM_PROVIDER == "stub"
+
+    @property
+    def as_of_date(self) -> date:
+        """Effective 'today' for window math (override via AS_OF_DATE for determinism)."""
+        return date.fromisoformat(self.AS_OF_DATE) if self.AS_OF_DATE else date.today()
 
     def validate_runtime(self) -> None:
         """Fail fast at service boot if a required runtime secret is missing.
