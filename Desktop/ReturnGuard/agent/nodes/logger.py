@@ -37,6 +37,7 @@ def logger(state: ResolutionState) -> dict:
         "risk_factors": state.get("risk_factors", []),
         "proposed_action": state.get("proposed_action"),
         "executed_action": executed,
+        "guardrail_status": state.get("guardrail_status"),
         "amount": amount,
         "expected_return_cost": state.get("expected_return_cost"),
         "expected_saving": state.get("expected_saving"),
