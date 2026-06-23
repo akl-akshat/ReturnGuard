@@ -89,9 +89,8 @@ class MCPDataAccess:
         self._urls = {"order": order_url, "customer": customer_url, "fraud": fraud_url}
 
     def _call(self, server: str, tool: str, **kwargs: Any) -> Any:
-        from fastmcp import Client  # lazy
-
         import anyio
+        from fastmcp import Client  # lazy
 
         async def _run() -> Any:
             async with Client(self._urls[server]) as client:

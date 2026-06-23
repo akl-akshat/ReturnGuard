@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import functools
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from observability.tracing import get_tracer
 

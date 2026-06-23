@@ -10,7 +10,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent.decision.cost_model import action_cost, expected_return_cost, expected_saving, order_value
+from agent.decision.cost_model import (
+    action_cost,
+    expected_return_cost,
+    expected_saving,
+    order_value,
+)
 from agent.decision.eligibility import satisfaction_ok
 from config.settings import settings
 

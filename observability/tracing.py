@@ -7,9 +7,10 @@ An in-memory tracer is provided for tests to assert the full trajectory was span
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Iterator
+from typing import Any
 
 from config.settings import settings
 

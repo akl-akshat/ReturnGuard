@@ -2,7 +2,12 @@
 
 import pytest
 
-from agent.decision.cost_model import action_cost, expected_return_cost, expected_saving, order_value
+from agent.decision.cost_model import (
+    action_cost,
+    expected_return_cost,
+    expected_saving,
+    order_value,
+)
 
 pytestmark = pytest.mark.unit
 

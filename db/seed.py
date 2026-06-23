@@ -12,7 +12,7 @@ import json
 import sys
 
 from config.settings import settings
-from db.dataset import REFERENCE_DATE, NON_RETURNABLE, build_dataset
+from db.dataset import NON_RETURNABLE, REFERENCE_DATE, build_dataset
 
 
 def seed(dsn: str | None = None) -> dict[str, int]:

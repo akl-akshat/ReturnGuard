@@ -52,4 +52,4 @@ def embed_batch(texts: Iterable[str], dim: int | None = None) -> list[list[float
 
 def cosine(a: list[float], b: list[float]) -> float:
     # Inputs are L2-normalised, so cosine == dot product.
-    return sum(x * y for x, y in zip(a, b))
+    return sum(x * y for x, y in zip(a, b, strict=False))
