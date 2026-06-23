@@ -15,7 +15,7 @@ from typing import Any
 import yaml
 
 from agent.decision.cost_model import order_value
-from agent.deps import get_deps, reset_deps
+from agent.deps import reset_deps
 from agent.runner import is_paused, run_config
 from agent.state import initial_state
 from config.settings import settings
@@ -38,7 +38,6 @@ def _build_graph():
 def _score_case(case: dict[str, Any]) -> dict[str, Any]:
     reset_deps()  # isolate each case (no cross-case rate-limit contamination)
     graph = _build_graph()
-    repo = get_deps().repo
     cfg = run_config(case["id"])
 
     state = initial_state(case["id"], case["scenario_text"], "api",

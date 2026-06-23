@@ -11,7 +11,8 @@ after guardrails and (when required) human approval.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from config.settings import settings
 from db.repository import Repository
