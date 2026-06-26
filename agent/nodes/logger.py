@@ -23,9 +23,14 @@ def logger(state: ResolutionState) -> dict:
     executed = state.get("executed_action")
     status = state.get("status") or (ResolutionStatus.resolved.value if executed else ResolutionStatus.pending.value)
 
+    # D-06: record the TOTAL money moved for this request (primary action + any goodwill
+    # sweetener), reconciled against the audit rows — not just the primary action's amount.
+    _MONEY = {"instant_refund", "partial_refund", "store_credit_refund",
+              "retention_coupon", "goodwill_credit"}
     amount = None
     if executed:
-        amount = executed.get("amount")
+        amount = round(sum(a.get("amount") or 0 for a in repo.get_audit(request_id)
+                           if a["action_type"] in _MONEY), 2)
 
     resolution = {
         "request_id": request_id,
