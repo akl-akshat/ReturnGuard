@@ -49,6 +49,17 @@ def evaluate_guardrails(
     value = order_value(order) if order else 0.0
     new_action = {**action, "params": dict(action.get("params") or {})}
 
+    # (0) a monetary amount must be non-negative and finite — invalid values never pass (D-02).
+    if at in FINANCIAL and (amount < 0 or amount != amount):  # NaN-safe
+        status = _worsen(status, "violation")
+        requires_human = True
+        notes.append(f"invalid monetary amount {amount} rejected")
+    if "goodwill" in new_action["params"] and float(new_action["params"]["goodwill"]) < 0:
+        new_action["params"]["goodwill"] = 0.0
+        status = _worsen(status, "violation")
+        requires_human = True
+        notes.append("negative goodwill rejected")
+
     # (1) refund/credit must not exceed the order value — hard violation.
     if at in REFUNDISH and amount > value + 1e-6:
         status = _worsen(status, "violation")
@@ -96,6 +107,15 @@ def evaluate_guardrails(
     if at == "escalate_to_human":
         requires_human = True
 
+    # Final 2-dp rounding must NEVER push a monetary amount over its ceiling (T-FIN-5):
+    # round first, then clamp to the value/cap so e.g. round(1.375)=1.38 can't exceed value 1.375.
     if at in FINANCIAL:
-        new_action["amount"] = round(amount, 2)
+        amt = round(amount, 2)
+        if at in REFUNDISH:
+            amt = min(amt, value)
+        elif at == "retention_coupon":
+            amt = min(amt, settings.MAX_COUPON_ABS, settings.MAX_COUPON_PCT * value)
+        elif at == "goodwill_credit":
+            amt = min(amt, settings.MAX_GOODWILL_CREDIT)
+        new_action["amount"] = amt
     return GuardrailResult(status=status, requires_human=requires_human, action=new_action, notes=notes)
