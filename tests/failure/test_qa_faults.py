@@ -73,7 +73,7 @@ def test_tool_exception_no_partial_effect():
         raise RuntimeError("DB write failed mid-action")
 
     repo.record_action = boom
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         process_refund(repo, "toolfail", order, 1299.0)
     repo.record_action = orig
     assert repo.get_audit("toolfail") == []  # nothing partially written

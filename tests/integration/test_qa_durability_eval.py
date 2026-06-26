@@ -47,7 +47,6 @@ def test_eval_gate_actually_bites_on_a_broken_guardrail():
     """T-EVAL-2: inject a satisfaction-floor bug; the eval HARD gate must go red."""
     import agent.decision.select as sel
 
-    broken_called = {"n": 0}
     orig = sel.select_action
 
     def broken(root_cause, eligible, order, within_window):
