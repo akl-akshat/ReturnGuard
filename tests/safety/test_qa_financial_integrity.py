@@ -13,7 +13,6 @@ from agent.graph import build_graph
 from agent.runner import is_paused, resume, run_config
 from agent.state import initial_state
 from config.settings import settings
-from tools.data_access import LocalDataAccess
 
 pytestmark = pytest.mark.safety
 

@@ -1,6 +1,5 @@
 """Adversarial QA — audit integrity, RAG filtering, MCP read-only, graph durability/cap."""
 
-import inspect
 from pathlib import Path
 
 import pytest

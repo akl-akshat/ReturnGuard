@@ -84,6 +84,7 @@ def test_injection_via_issue_type_hint_field_ignored():
 def test_repository_uses_parametrised_queries_only():
     """T-INJ-6: no value interpolation into SQL (parametrised placeholders only)."""
     import inspect
+
     import db.repository as r
     import db.seed as s
     for mod in (r, s):

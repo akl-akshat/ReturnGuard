@@ -2,7 +2,7 @@
 
 import pytest
 
-from agent.deps import get_deps, reset_deps
+from agent.deps import reset_deps
 from agent.graph import build_graph
 from agent.runner import is_paused, resume, run_config
 from agent.state import initial_state
@@ -96,8 +96,9 @@ def test_eval_metric_math_is_correct():
 
 
 def test_eval_dataset_meets_coverage_floor():
-    import yaml
     from pathlib import Path
+
+    import yaml
     cases = yaml.safe_load(Path("eval/cases.yaml").read_text(encoding="utf-8"))
     assert len(cases) >= 40
     assert sum(1 for c in cases if c["expected_escalation"]) >= 5

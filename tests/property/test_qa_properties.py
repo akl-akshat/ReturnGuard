@@ -1,7 +1,8 @@
 """Adversarial QA — property-based & metamorphic invariants (find what cases miss)."""
 
 import pytest
-from hypothesis import HealthCheck, given, settings as hyp_settings
+from hypothesis import HealthCheck, given
+from hypothesis import settings as hyp_settings
 from hypothesis import strategies as st
 
 from agent.decision.guardrails import evaluate_guardrails
