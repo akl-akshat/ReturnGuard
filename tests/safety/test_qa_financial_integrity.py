@@ -132,6 +132,20 @@ def test_mismatch_uses_true_owner_and_does_not_leak():  # D-01 regression
     assert "CUST-SERIAL" not in str(esc["recommendation"])  # foreign id not carried
 
 
+def test_decision_endpoint_rejects_negative_modified_amount():  # D-02 endpoint defence
+    from fastapi.testclient import TestClient
+
+    from service.app import app
+    with TestClient(app) as c:
+        c.post("/resolve", json={"request_id": "ep-neg", "issue_text": "return this tablet",
+                                 "order_id": "ORD-HIVAL-COD", "customer_id": "CUST-SERIAL"})
+        r = c.post("/escalations/ep-neg/decision",
+                   json={"decision": "modify", "reviewer_id": "op1",
+                         "modified_action": {"action_type": "instant_refund", "amount": -500.0}})
+        assert r.status_code == 422
+        assert get_deps().repo.get_audit("ep-neg", "instant_refund") == []
+
+
 def _mem():
     from langgraph.checkpoint.memory import MemorySaver
     return MemorySaver()

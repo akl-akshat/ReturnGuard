@@ -25,5 +25,12 @@ def decide(request_id: str, body: DecisionRequest, request: Request) -> ResolveR
     if not is_paused(graph, cfg):
         raise HTTPException(status_code=409, detail="request is not awaiting a human decision")
 
+    # Defence-in-depth (the guardrail remains the real net): require a recorded reviewer
+    # identity (NFR-SEC-4) and reject an invalid modified amount up front (D-02).
+    if not body.reviewer_id:
+        raise HTTPException(status_code=422, detail="reviewer_id is required")
+    if body.modified_action and (body.modified_action.get("amount") or 0) < 0:
+        raise HTTPException(status_code=422, detail="modified_action.amount must be non-negative")
+
     final = resume(graph, cfg, body.model_dump())
     return summarize(final, paused=False)
