@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ReturnGuard — Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&family=Inter:wght@400;450;500;600&family=Space+Grotesk:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,400,0,0&display=swap" rel="stylesheet">
+<style>
+/* ReturnGuard support console — restrained, flat, one accent. No aurora, no glow, no gradient text. */
+:root{
+  --bg:#0b0d10; --surface:#111418; --surface-2:#161a1f; --raise:#1b2026;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --ink:#e7e9ec; --muted:#98a0aa; --faint:#6a727c;
+  --accent:#4cc38a; --accent-ink:#04140c; --accent-soft:rgba(76,195,138,.12); --accent-line:rgba(76,195,138,.34);
+  --amber:#e2b25a; --amber-soft:rgba(226,178,90,.13); --amber-line:rgba(226,178,90,.32);
+  --violet:#9d8bff; --violet-soft:rgba(157,139,255,.13);
+  --red:#e5766f; --red-soft:rgba(229,118,111,.12);
+  --display:'Plus Jakarta Sans',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+  --label:'Space Grotesk',ui-monospace,monospace;
+  --r:14px; --r-sm:10px; --r-lg:18px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.01em;margin:0;line-height:1.2}
+::selection{background:var(--accent-soft);color:var(--ink)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:9px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.16);background-clip:padding-box}
+.msym{font-family:'Material Symbols Rounded';font-weight:normal;font-size:20px;line-height:1;-webkit-font-feature-settings:'liga';display:inline-block;vertical-align:middle}
+
+/* ---- top bar ---- */
+.topbar{height:58px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+  border-bottom:1px solid var(--line);background:var(--surface)}
+.top-l{display:flex;align-items:center;gap:8px}
+.rail-toggle{display:none;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--muted);cursor:pointer;place-items:center}
+.rail-toggle:hover{color:var(--ink);border-color:var(--line-2)}
+.brand{display:flex;align-items:center;gap:11px}
+.brand .mark{width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);
+  display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:15px}
+.brand .nm{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em}
+.brand .tag{font-family:var(--label);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+  border-left:1px solid var(--line-2);padding-left:11px;margin-left:4px}
+.top-r{display:flex;align-items:center;gap:8px}
+.top-link{color:var(--muted);font-size:13.5px;padding:7px 12px;border-radius:9px;display:flex;align-items:center;gap:6px;transition:.15s}
+.top-link:hover{color:var(--ink);background:var(--surface-2)}
+.who{position:relative}
+.who-btn{display:flex;align-items:center;gap:9px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:10px;padding:5px 10px 5px 6px;cursor:pointer;transition:.15s}
+.who-btn:hover{border-color:var(--line-2)}
+.who-btn .who-nm{font-weight:500;font-size:13px;line-height:1.1}
+.who-btn .who-id{font-family:var(--label);font-size:10.5px;color:var(--faint)}
+.who-btn .msym{color:var(--faint);font-size:18px}
+.av{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-weight:600;font-size:12px;
+  background:var(--raise);color:var(--ink);flex:none;font-family:var(--display)}
+.menu{position:absolute;right:0;top:46px;background:var(--raise);border:1px solid var(--line-2);border-radius:12px;
+  box-shadow:0 20px 50px -18px rgba(0,0,0,.7);padding:6px;min-width:250px;z-index:80;
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:.16s}
+.menu.open{opacity:1;transform:none;pointer-events:auto}
+.menu .mlbl{font-family:var(--label);font-size:10px;color:var(--faint);letter-spacing:.16em;text-transform:uppercase;padding:8px 10px 5px}
+.menu button{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;padding:8px 10px;border-radius:9px;
+  cursor:pointer;text-align:left;color:var(--ink);transition:.12s}
+.menu button:hover{background:var(--surface-2)}
+.menu button.on{background:var(--accent-soft)}
+.menu button .mnm{font-size:13.5px;font-weight:500}
+.menu button .mid{font-family:var(--label);font-size:11px;color:var(--faint)}
+
+/* ---- shell ---- */
+.shell{display:grid;grid-template-columns:312px 1fr;flex:1;min-height:0}
+.rail{border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;min-height:0}
+.rail-h{padding:16px 16px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rail-h h2{font-size:12px;font-family:var(--label);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:500}
+.newbtn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:8px;padding:6px 11px;cursor:pointer;transition:.14s}
+.newbtn:hover{background:rgba(76,195,138,.2)}
+.newbtn .msym{font-size:17px}
+
+.convs{flex:1;overflow-y:auto;padding:4px 10px 14px;display:flex;flex-direction:column;gap:4px;min-height:0}
+.conv{display:flex;gap:11px;padding:11px 11px;border-radius:11px;cursor:pointer;border:1px solid transparent;
+  text-align:left;background:none;width:100%;transition:.13s;position:relative}
+.conv:hover{background:var(--surface-2)}
+.conv.on{background:var(--surface-2);border-color:var(--line)}
+.conv.on::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:2.5px;border-radius:3px;background:var(--accent)}
+.conv-ic{width:34px;height:34px;border-radius:9px;background:var(--raise);display:grid;place-items:center;font-size:17px;flex:none}
+.conv-main{flex:1;min-width:0}
+.conv-top{display:flex;align-items:baseline;gap:8px}
+.conv-title{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.conv-time{font-family:var(--label);font-size:10.5px;color:var(--faint);flex:none}
+.conv-sub{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.conv-tags{margin-top:6px}
+
+.tag{display:inline-flex;align-items:center;gap:5px;font-family:var(--label);font-size:10.5px;font-weight:500;
+  padding:2px 8px;border-radius:999px;letter-spacing:.02em;border:1px solid transparent}
+.tag .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.tag.active{color:var(--muted);background:var(--surface-2);border-color:var(--line)}
+.tag.await{color:var(--amber);background:var(--amber-soft);border-color:var(--amber-line)}
+.tag.done{color:var(--accent);background:var(--accent-soft);border-color:var(--accent-line)}
+.tag.review{color:var(--violet);background:var(--violet-soft);border-color:rgba(157,139,255,.3)}
+.tag.closed{color:var(--faint);background:var(--surface-2);border-color:var(--line)}
+
+.rail-empty{margin:auto 16px;text-align:center;color:var(--muted);padding:30px 6px}
+.rail-empty .msym{font-size:30px;color:var(--faint)}
+.rail-empty p{font-size:13px;margin:10px 0 0;line-height:1.5}
+
+.skel{height:58px;border-radius:11px;background:linear-gradient(90deg,var(--surface-2),var(--raise),var(--surface-2));
+  background-size:200% 100%;animation:sh 1.3s infinite;margin:4px 10px}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ---- chat column ---- */
+.chat{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+.chat-h{height:64px;flex:none;display:flex;align-items:center;gap:13px;padding:0 22px;border-bottom:1px solid var(--line);background:var(--surface)}
+.chat-h .cav{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);border:1px solid var(--accent-line);
+  display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:14px;color:var(--accent);flex:none}
+.chat-h .ct{min-width:0}
+.chat-h .cti{font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-h .csub{color:var(--muted);font-size:12.5px;display:flex;align-items:center;gap:7px;margin-top:1px}
+.chat-h .sp{margin-left:auto;display:flex;align-items:center;gap:10px}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+  cursor:pointer;display:grid;place-items:center;transition:.14s}
+.icon-btn:hover{color:var(--ink);border-color:var(--line-2)}
+
+.thread{flex:1;min-height:0;overflow-y:auto;padding:26px 22px 8px;display:flex;flex-direction:column;gap:3px}
+.thread-inner{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.msg{display:flex;gap:11px;max-width:86%;animation:rise .26s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg.me{align-self:flex-end;flex-direction:row-reverse}
+.msg .mav{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:600;
+  font-family:var(--display);margin-top:2px}
+.msg.bot .mav{background:var(--accent);color:var(--accent-ink)}
+.msg.me .mav{background:var(--raise);color:var(--ink)}
+.mcol{min-width:0;display:flex;flex-direction:column;gap:6px}
+.bub{padding:11px 14px;border-radius:14px;font-size:14px;line-height:1.55;word-wrap:break-word}
+.msg.bot .bub{background:var(--surface);border:1px solid var(--line);border-top-left-radius:5px}
+.msg.me .bub{background:var(--raise);border:1px solid var(--line-2);border-top-right-radius:5px}
+.bub strong{font-weight:600;color:var(--ink)}
+.meta-row{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--faint);font-family:var(--label)}
+.msg.me .meta-row{justify-content:flex-end}
+.meta-row .msym{font-size:13px}
+.meta-row .st-fail{color:var(--red);cursor:pointer}
+
+/* action cards */
+.card{border:1px solid var(--line);border-radius:13px;overflow:hidden;background:var(--surface);max-width:380px}
+.card-top{display:flex;align-items:center;gap:12px;padding:13px 14px}
+.card-ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:20px;flex:none;background:var(--surface-2)}
+.card-ti{font-family:var(--display);font-weight:700;font-size:13.5px}
+.card-su{color:var(--muted);font-size:12px;margin-top:1px}
+.card-amt{margin-left:auto;font-family:var(--display);font-weight:700;font-size:17px;flex:none}
+.card-foot{padding:8px 14px;border-top:1px solid var(--line);font-family:var(--label);font-size:10.5px;color:var(--faint);
+  display:flex;align-items:center;gap:6px}
+.card.pending{border-color:var(--amber-line)}
+.card.pending .card-ic{background:var(--amber-soft);color:var(--amber)}
+.card.pending .card-foot{color:var(--amber);border-color:var(--amber-line)}
+.card.done{border-color:var(--accent-line)}
+.card.done .card-ic{background:var(--accent-soft);color:var(--accent)}
+.card.done .card-amt{color:var(--accent)}
+.card.done .card-foot{color:var(--accent)}
+.card.review .card-ic{background:var(--violet-soft);color:var(--violet)}
+.card.deny .card-ic{background:var(--red-soft);color:var(--red)}
+
+/* typing */
+.typing{display:flex;gap:5px;align-items:center;padding:13px 15px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;border-top-left-radius:5px;width:fit-content}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bln 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
+@keyframes bln{0%,60%,100%{opacity:.28;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+/* empty / error */
+.blank{margin:auto;text-align:center;max-width:340px;padding:24px;color:var(--muted)}
+.blank .bic{width:56px;height:56px;border-radius:15px;background:var(--surface);border:1px solid var(--line);
+  display:grid;place-items:center;margin:0 auto 16px}
+.blank .bic .msym{font-size:26px;color:var(--accent)}
+.blank h3{font-size:17px;color:var(--ink);margin-bottom:6px}
+.blank p{font-size:13.5px;line-height:1.55}
+.inline-err{align-self:center;display:flex;align-items:center;gap:9px;background:var(--red-soft);border:1px solid rgba(229,118,111,.3);
+  color:var(--red);border-radius:11px;padding:9px 14px;font-size:12.5px;margin:6px auto}
+.inline-err button{background:none;border:0;color:var(--red);font-weight:600;cursor:pointer;text-decoration:underline}
+
+/* composer */
+.composer{flex:none;border-top:1px solid var(--line);background:var(--surface);padding:12px 22px 16px}
+.composer-inner{max-width:760px;margin:0 auto}
+.quick{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+.chip{font-size:12.5px;font-weight:500;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:999px;padding:6px 13px;cursor:pointer;transition:.13s}
+.chip:hover{color:var(--ink);border-color:var(--line-2)}
+.chip.yes{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
+.chip.no{color:var(--muted)}
+.inbar{display:flex;align-items:flex-end;gap:10px;border:1px solid var(--line-2);border-radius:14px;padding:8px 8px 8px 14px;
+  background:var(--surface-2);transition:.15s}
+.inbar.focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+.inbar textarea{flex:1;border:0;outline:0;resize:none;font:inherit;font-size:14px;line-height:1.5;max-height:132px;
+  background:none;color:var(--ink);padding:6px 0}
+.inbar textarea::placeholder{color:var(--faint)}
+.send{width:38px;height:38px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);cursor:pointer;
+  display:grid;place-items:center;flex:none;transition:.14s}
+.send:hover{filter:brightness(1.06)}
+.send:disabled{background:var(--raise);color:var(--faint);cursor:not-allowed}
+.composer.locked{opacity:.55;pointer-events:none}
+.hint{font-size:11px;color:var(--faint);margin-top:8px;text-align:center;font-family:var(--label);letter-spacing:.02em}
+
+/* new-conversation modal */
+.overlay{position:fixed;inset:0;background:rgba(4,6,8,.62);backdrop-filter:blur(3px);display:none;place-items:center;z-index:100}
+.overlay.open{display:grid;animation:fade .16s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{width:min(560px,92vw);max-height:82vh;display:flex;flex-direction:column;background:var(--surface);
+  border:1px solid var(--line-2);border-radius:18px;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.8)}
+.modal-h{padding:18px 20px 14px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between}
+.modal-h h3{font-size:16px}.modal-h p{color:var(--muted);font-size:12.5px;margin:3px 0 0}
+.modal-body{overflow-y:auto;padding:14px 16px 18px;display:flex;flex-direction:column;gap:9px}
+.pick{display:flex;gap:13px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;
+  background:var(--surface-2);text-align:left;width:100%;transition:.13s}
+.pick:hover{border-color:var(--accent-line);background:var(--raise)}
+.pick .pic{width:42px;height:42px;border-radius:11px;background:var(--raise);display:grid;place-items:center;font-size:21px;flex:none}
+.pick .pmain{flex:1;min-width:0}
+.pick .ptitle{font-weight:600;font-size:14px}
+.pick .pmeta{color:var(--muted);font-size:12px;margin-top:2px}
+.pick .pprice{font-family:var(--display);font-weight:700;font-size:13.5px;margin-left:auto;flex:none}
+.pick.general .pic{background:var(--accent-soft);color:var(--accent)}
+.modal-sep{font-family:var(--label);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);
+  padding:6px 2px 2px}
+
+@media(max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .rail{display:none}
+  .rail.mobile-open{display:flex;position:fixed;inset:58px 0 0;z-index:60;width:min(340px,86%);
+    border-right:1px solid var(--line-2);box-shadow:0 0 60px rgba(0,0,0,.6)}
+  .rail-toggle{display:grid}
+  .thread-inner,.composer-inner{max-width:640px}
+}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="top-l">
+      <button class="rail-toggle" onclick="App.toggleRail()" title="Conversations"><span class="msym">menu</span></button>
+      <a class="brand" href="/">
+        <div class="mark">R</div>
+        <div><div class="nm">ReturnGuard</div></div>
+        <span class="tag" style="background:none;border:0;color:var(--faint);font-family:var(--label);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;padding:0 0 0 11px;border-left:1px solid var(--line-2)">Support</span>
+      </a>
+    </div>
+    <div class="top-r">
+      <a class="top-link" href="/admin"><span class="msym">dashboard</span> Ops console</a>
+      <div class="who">
+        <button class="who-btn" onclick="App.toggleMenu(event)">
+          <span class="av" id="whoAv">··</span>
+          <span><div class="who-nm" id="whoNm">Loading…</div><div class="who-id" id="whoId">—</div></span>
+          <span class="msym">expand_more</span>
+        </button>
+        <div class="menu" id="menu"><div class="mlbl">Signed in as (demo)</div><div id="menuList"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell">
+    <aside class="rail" id="rail">
+      <div class="rail-h">
+        <h2>Conversations</h2>
+        <button class="newbtn" onclick="App.openNew()"><span class="msym">add</span> New</button>
+      </div>
+      <div class="convs" id="convs"></div>
+    </aside>
+
+    <main class="chat">
+      <div class="chat-h" id="chatH" style="display:none">
+        <div class="cav" id="cav">RG</div>
+        <div class="ct">
+          <div class="cti" id="cTitle">Returns Assistant</div>
+          <div class="csub" id="cSub"></div>
+        </div>
+        <div class="sp">
+          <span id="cStatus"></span>
+          <button class="icon-btn" title="Delete conversation" onclick="App.deleteCurrent()"><span class="msym">delete</span></button>
+        </div>
+      </div>
+      <div class="thread" id="thread"><div class="thread-inner" id="threadInner"></div></div>
+      <div class="composer locked" id="composer">
+        <div class="composer-inner">
+          <div class="quick" id="quick"></div>
+          <div class="inbar" id="inbar">
+            <textarea id="ta" rows="1" placeholder="Describe your issue…"
+              oninput="App.grow(this)" onkeydown="App.keydown(event)"
+              onfocus="inbar.classList.add('focus')" onblur="inbar.classList.remove('focus')"></textarea>
+            <button class="send" id="sendBtn" onclick="App.send()" title="Send"><span class="msym">arrow_upward</span></button>
+          </div>
+          <div class="hint">Replies are generated from your message and this conversation's history.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay" onclick="if(event.target===this)App.closeNew()">
+    <div class="modal">
+      <div class="modal-h">
+        <div><h3>Start a conversation</h3><p>Pick the order you need help with, or ask a general question.</p></div>
+        <button class="icon-btn" onclick="App.closeNew()"><span class="msym">close</span></button>
+      </div>
+      <div class="modal-body" id="pickBody"></div>
+    </div>
+  </div>
+
+<script>
+const $=s=>document.querySelector(s);
+const inbar=$('#inbar');
+const ACCOUNT_ICON="support_agent";
+
+const App = {
+  customers:[], cust:null, sessions:[], orders:[], ordersById:{},
+  companies:[], activeId:null, session:null, sending:false,
+
+  /* ---------- boot ---------- */
+  async boot(){
+    try{ this.customers = await this.get('/api/customers'); }
+    catch(e){ return this.fatal('Could not reach the server.'); }
+    try{ this.companies = await this.get('/api/companies'); }catch(e){ this.companies=[]; }
+    $('#menuList').innerHTML = this.customers.map(c=>`
+      <button onclick="App.switchCustomer('${c.id}')" data-cid="${c.id}">
+        <span class="av">${c.initials}</span>
+        <span><div class="mnm">${c.name}</div><div class="mid">${c.id}</div></span>
+      </button>`).join('');
+    const params = new URLSearchParams(location.search);
+    const cid = params.get('c') || this.customers[0].id;
+    await this.switchCustomer(cid, params.get('s'), true);
+  },
+
+  /* ---------- account ---------- */
+  async switchCustomer(cid, wantSession=null, initial=false){
+    this.cust = this.customers.find(c=>c.id===cid) || this.customers[0];
+    this.closeMenu();
+    $('#whoAv').textContent = this.cust.initials;
+    $('#whoNm').textContent = this.cust.name;
+    $('#whoId').textContent = this.cust.id;
+    document.querySelectorAll('#menuList button').forEach(b=>b.classList.toggle('on', b.dataset.cid===this.cust.id));
+    // reset chat view when switching
+    if(!wantSession){ this.activeId=null; this.session=null; this.renderChatEmpty(); }
+    this.renderSkeleton();
+    // orders (for the new-conversation picker + emoji lookup) and sessions in parallel
+    const [orders, sessions] = await Promise.all([
+      this.get(`/api/customers/${cid}/orders`).catch(()=>[]),
+      this.get(`/api/sessions?customer_id=${cid}`).catch(()=>[]),
+    ]);
+    this.orders = orders; this.ordersById = Object.fromEntries(orders.map(o=>[o.id,o]));
+    this.sessions = sessions;
+    this.renderConvs();
+    if(wantSession && sessions.some(s=>s.id===wantSession)){ await this.openSession(wantSession); }
+    else{ this.syncUrl(); if(!initial && !this.activeId) this.renderChatEmpty(); }
+  },
+
+  /* ---------- conversations list ---------- */
+  renderSkeleton(){ $('#convs').innerHTML = '<div class="skel"></div>'.repeat(4); },
+  renderConvs(){
+    const box=$('#convs');
+    if(!this.sessions.length){
+      box.innerHTML = `<div class="rail-empty"><span class="msym">forum</span>
+        <p>No conversations yet.<br>Start one to get help with an order.</p></div>`;
+      return;
+    }
+    box.innerHTML = this.sessions.map(s=>{
+      const o=this.ordersById[s.order_id];
+      const ic = o? o.emoji : '💬';
+      const st=this.statusMeta(s.status, s.phase);
+      const sub=(s.last_message||'').replace(/[*#_`]/g,'');
+      return `<button class="conv ${s.id===this.activeId?'on':''}" onclick="App.openSession('${s.id}')">
+        <div class="conv-ic">${ic}</div>
+        <div class="conv-main">
+          <div class="conv-top"><span class="conv-title">${this.esc(s.title)}</span><span class="conv-time">${this.ago(s.updated_at)}</span></div>
+          <div class="conv-sub">${this.esc(sub)||'…'}</div>
+          <div class="conv-tags"><span class="tag ${st.cls}"><span class="dot"></span>${st.label}</span></div>
+        </div></button>`;
+    }).join('');
+  },
+
+  /* ---------- open a session ---------- */
+  async openSession(sid){
+    this.activeId=sid; this.renderConvs(); this.syncUrl(); this.closeRail();
+    $('#thread').scrollTop=0;
+    $('#threadInner').innerHTML='<div class="blank"><div class="bic"><span class="msym">hourglass_empty</span></div><p>Loading conversation…</p></div>';
+    $('#chatH').style.display='flex'; $('#composer').classList.remove('locked');
+    try{ this.session = await this.get(`/api/sessions/${sid}`); }
+    catch(e){ $('#threadInner').innerHTML=''; return this.threadError('Could not load this conversation.', ()=>this.openSession(sid)); }
+    this.renderHeader(); this.renderThread(); this.renderQuick(); $('#ta').focus();
+  },
+
+  renderHeader(){
+    const s=this.session, o=this.ordersById[s.order_id];
+    $('#cTitle').textContent = s.title;
+    $('#cav').textContent = o? o.emoji : 'RG';
+    if(o) $('#cav').style.fontSize='19px'; else $('#cav').style.fontSize='14px';
+    const bits=[];
+    if(o){ bits.push(`₹${o.price.toFixed(0)}`); bits.push(o.category);
+      bits.push(o.returnable ? (o.within_window?'Return window open':'Return window closed') : 'Final sale'); }
+    else bits.push('General enquiry');
+    const co=this.companies.find(c=>c.id===s.company_id);
+    if(co) bits.push(`${this.esc(co.name)} policy`);
+    $('#cSub').innerHTML = bits.join(' &middot; ');
+    const st=this.statusMeta(s.status, s.phase);
+    $('#cStatus').innerHTML = `<span class="tag ${st.cls}"><span class="dot"></span>${st.label}</span>`;
+  },
+
+  renderThread(){
+    const inner=$('#threadInner'); inner.innerHTML='';
+    for(const m of this.session.messages) inner.appendChild(this.msgEl(m));
+    this.scroll();
+  },
+
+  msgEl(m){
+    const wrap=document.createElement('div');
+    wrap.className='msg '+(m.role==='user'?'me':'bot');
+    const av = m.role==='user' ? this.cust.initials : 'RG';
+    const card = this.cardHtml(m.meta);
+    const status = m._status ? this.statusLine(m._status, m._mid) : `<span>${this.ago(m.created_at)||'now'}</span>`;
+    wrap.innerHTML = `<div class="mav">${av}</div>
+      <div class="mcol"><div class="bub">${this.fmt(m.text)}</div>${card}
+        <div class="meta-row">${status}</div></div>`;
+    return wrap;
+  },
+  statusLine(st,mid){
+    if(st==='sending') return `<span class="msym" style="font-size:12px">schedule</span><span>Sending…</span>`;
+    if(st==='failed')  return `<span class="st-fail" onclick="App.retry('${mid}')"><span class="msym">error</span> Failed — retry</span>`;
+    return `<span class="msym" style="font-size:13px;color:var(--accent)">done</span><span>Sent</span>`;
+  },
+
+  /* ---------- sending ---------- */
+  renderQuick(){
+    const q=$('#quick'); const s=this.session; if(!s){ q.innerHTML=''; return; }
+    let chips=[];
+    if(s.phase==='awaiting_evidence'){
+      chips=[{l:'📎 Attach a clear photo',a:'ev:strong',c:'yes'},
+             {l:'📎 Attach an unclear photo',a:'ev:weak',c:''},
+             {l:'Talk to a human',a:'human',c:''}];
+    } else if(s.phase==='confirming'){
+      chips=[{l:'Yes, go ahead',a:'text',c:'yes'},{l:'No',a:'text',c:'no'},{l:'Talk to a human',a:'human',c:''}];
+    } else if(s.status==='escalated'){
+      chips=[{l:'Thanks',a:'text',c:''}];
+    } else if(s.status==='resolved'||s.status==='denied'){
+      chips=[{l:'Thanks!',a:'text',c:''},{l:'Start a new request',a:'new',c:''}];
+    } else if(s.order_id){
+      chips=[{l:"It doesn't fit"},{l:'It arrived damaged'},{l:'Wrong item'},
+             {l:'I changed my mind'},{l:"Where's my refund?"}].map(x=>({...x,a:'text',c:''}));
+    } else {
+      chips=[{l:'Track my return',a:'text'},{l:'What are my options?',a:'text'}];
+    }
+    this._chips = chips;
+    q.innerHTML = chips.map((x,i)=>`<button class="chip ${x.c||''}" onclick="App.chipAt(${i})">${x.l}</button>`).join('');
+  },
+  chipAt(i){ const x=(this._chips||[])[i]; if(x) this.chip(x); },
+  chip(x){
+    const a=x.a||'text';
+    if(a==='ev:strong') return this.sendEvidence('strong');
+    if(a==='ev:weak') return this.sendEvidence('weak');
+    if(a==='human') return this.send('I would like to talk to a human, please');
+    if(a==='new') return this.openNew();
+    return this.send(x.l);
+  },
+
+  async send(preset){
+    const ta=$('#ta'); const text=(preset||ta.value).trim();
+    if(!text) return;
+    ta.value=''; this.grow(ta);
+    return this._dispatch(text, null, text);
+  },
+  sendEvidence(quality){
+    // The client sends only an opaque reference; the server-side assessor decides the verdict.
+    // In the offline demo, a 'demo-clear'/'demo-blurry' ref simulates a strong/weak photo.
+    const ref=(quality==='strong'?'demo-clear-':'demo-blurry-')+(this._ev=(this._ev||0)+1);
+    const disp='📎 Shared a photo'+(quality==='strong'?' (clear)':' (unclear)');
+    return this._dispatch('', {ref}, disp);
+  },
+  async _dispatch(text, evidence, display){
+    if(!this.session || this.sending) return;
+    this.sending=true; $('#quick').innerHTML='';
+    const mid='m'+(this._c=(this._c||0)+1);
+    const inner=$('#threadInner');
+    let typing;
+    try{
+      const um={role:'user', text:display, meta:{}, created_at:null, _status:'sending', _mid:mid, _text:text, _ev:evidence};
+      this._pending=um;
+      const el=this.msgEl(um); el.dataset.mid=mid; inner.appendChild(el); this.scroll();
+      typing=this.showTyping();
+      const body = evidence ? {text, evidence} : {text};
+      const res=await this.post(`/api/sessions/${this.session.id}/messages`, body);
+      this.markStatus(mid,'sent');
+      await this.delay(420); if(typing) typing.remove();
+      for(const am of res.messages){ inner.appendChild(this.msgEl(am)); this.scroll(); await this.delay(120); }
+      this.session.phase=res.phase; this.session.status=res.status; this.session.order_id=res.order_id;
+      this.renderHeader(); this.renderQuick();
+      await this.refreshSessions();
+    }catch(e){
+      if(typing) typing.remove(); this.markStatus(mid,'failed');
+      this.threadError('Message failed to send. Your conversation is safe.', null, true);
+    }finally{ this.sending=false; }
+  },
+  retry(mid){
+    const p=(this._pending && this._pending._mid===mid) ? this._pending : null;
+    const el=[...document.querySelectorAll('.msg.me')].find(x=>x.dataset.mid===mid);
+    if(el) el.remove();
+    const err=$('#threadInner').querySelector('.inline-err'); if(err) err.remove();
+    if(p && p._ev) this._dispatch(p._text, p._ev, p.text);
+    else if(p && p._text) this.send(p._text);
+  },
+  markStatus(mid,st){
+    const el=[...document.querySelectorAll('.msg.me')].find(x=>x.dataset.mid===mid);
+    if(!el) return;
+    const row=el.querySelector('.meta-row'); if(row) row.innerHTML=this.statusLine(st,mid);
+  },
+  showTyping(){
+    const inner=$('#threadInner');
+    const w=document.createElement('div'); w.className='msg bot';
+    w.innerHTML=`<div class="mav">RG</div><div class="mcol"><div class="typing"><i></i><i></i><i></i></div></div>`;
+    inner.appendChild(w); this.scroll(); return w;
+  },
+
+  /* ---------- cards ---------- */
+  cardHtml(meta){
+    if(!meta || !meta.kind) return '';
+    if(meta.kind==='policy'){
+      const cites=(meta.citations||[]).map(c=>`${this.esc(c.doc)} §${c.seq+1}`).join(' · ');
+      return `<div class="card"><div class="card-foot" style="border-top:0">
+        <span class="msym" style="font-size:13px">menu_book</span>
+        Grounded in ${this.esc(meta.company||'company')} policy${cites?(' — '+cites):''}</div></div>`;
+    }
+    if(meta.kind==='review'){
+      const denied = meta.reason==='denied';
+      const cls = denied ? 'deny' : 'review';
+      return `<div class="card ${cls}"><div class="card-top"><div class="card-ic">${denied?'⚠️':'🧑‍💼'}</div>
+        <div><div class="card-ti">${denied?'Not approved':'With a specialist'}</div>
+        <div class="card-su">${denied?'Reviewed by our team':'A human is reviewing your case'}</div></div></div>
+        <div class="card-foot"><span class="msym" style="font-size:13px">${denied?'block':'schedule'}</span> ${denied?'No action taken':"No money has moved — we'll follow up shortly"}</div></div>`;
+    }
+    const A={
+      exchange_with_size_guide:['🔁','Size exchange','A free exchange with a size guide'],
+      free_exchange:['🔁','Free exchange','Replacement on the way'],
+      expedited_replacement:['📦','Priority replacement','Shipped at no cost'],
+      instant_refund:['↩️','Full refund','To your original payment method'],
+      partial_refund:['↩️','Partial refund','To your original payment method'],
+      store_credit_refund:['🎫','Store credit','Added to your account'],
+      retention_coupon:['🎟️','Discount coupon','Applied to your account'],
+      goodwill_credit:['🎁','Goodwill credit','With our apologies'],
+      deny_with_explanation:['⚠️','Not eligible','See the reason above'],
+      provide_information:['ℹ️','Information','Details shared above'],
+    };
+    const a=A[meta.action_type]; if(!a) return '';
+    const money=['instant_refund','partial_refund','store_credit_refund','retention_coupon','goodwill_credit'];
+    const amt = (meta.amount && money.includes(meta.action_type)) ? `<div class="card-amt">₹${Number(meta.amount).toFixed(0)}</div>` : '';
+    if(meta.kind==='proposal'){
+      return `<div class="card pending"><div class="card-top"><div class="card-ic">${a[0]}</div>
+        <div><div class="card-ti">${a[1]}</div><div class="card-su">Proposed — awaiting your confirmation</div></div>${amt}</div>
+        <div class="card-foot"><span class="msym" style="font-size:13px">schedule</span> Nothing has been charged or changed yet</div></div>`;
+    }
+    const cls = meta.action_type==='deny_with_explanation' ? 'deny' : 'done';
+    const foot = cls==='deny' ? 'No action taken' : 'Completed';
+    return `<div class="card ${cls}"><div class="card-top"><div class="card-ic">${a[0]}</div>
+      <div><div class="card-ti">${a[1]}</div><div class="card-su">${a[2]}</div></div>${amt}</div>
+      <div class="card-foot"><span class="msym" style="font-size:13px">check_circle</span> ${foot}</div></div>`;
+  },
+
+  /* ---------- new conversation ---------- */
+  openNew(){
+    const body=$('#pickBody');
+    let html='';
+    if(this.companies.length){
+      html += `<div class="modal-sep">Support policy</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:2px 2px 8px">
+          <span class="msym" style="color:var(--muted);font-size:18px">menu_book</span>
+          <select id="providerSel" style="flex:1;background:var(--surface-2);border:1px solid var(--line);
+            border-radius:9px;color:var(--ink);font:inherit;font-size:13px;padding:8px 10px">
+            <option value="">ReturnGuard default policy</option>
+            ${this.companies.map(c=>`<option value="${c.id}">${this.esc(c.name)} — their uploaded policy (${c.docs} doc${c.docs===1?'':'s'})</option>`).join('')}
+          </select></div>`;
+    }
+    html += `<button class="pick general" onclick="App.createSession(null)">
+      <div class="pic">💬</div><div class="pmain"><div class="ptitle">General enquiry</div>
+      <div class="pmeta">Ask about policy, timelines or options — no specific order</div></div></button>`;
+    if(this.orders.length){
+      html += `<div class="modal-sep">Your orders</div>`;
+      html += this.orders.map(o=>{
+        const win = o.returnable ? (o.within_window?'<span class="tag done"><span class="dot"></span>Returnable</span>'
+          :'<span class="tag closed"><span class="dot"></span>Window closed</span>')
+          : '<span class="tag await"><span class="dot"></span>Final sale</span>';
+        return `<button class="pick" onclick="App.createSession('${o.id}')">
+          <div class="pic">${o.emoji}</div>
+          <div class="pmain"><div class="ptitle">${this.esc(o.title)}</div>
+            <div class="pmeta">${o.category} &middot; delivered ${o.delivery_date||'—'} &nbsp; ${win}</div></div>
+          <div class="pprice">₹${o.price.toFixed(0)}</div></button>`;
+      }).join('');
+    }
+    body.innerHTML=html;
+    $('#overlay').classList.add('open');
+  },
+  closeNew(){ $('#overlay').classList.remove('open'); },
+  async createSession(orderId){
+    const sel=document.getElementById('providerSel');
+    const companyId=(sel && sel.value)||null;
+    this.closeNew();
+    try{
+      const s=await this.post('/api/sessions', {customer_id:this.cust.id, order_id:orderId, company_id:companyId});
+      this.sessions.unshift({id:s.id, title:s.title, order_id:s.order_id, status:s.status, phase:s.phase,
+        updated_at:s.updated_at, last_message:(s.messages.at(-1)||{}).text||''});
+      this.session=s; this.activeId=s.id;
+      this.renderConvs(); this.syncUrl(); this.closeRail();
+      $('#chatH').style.display='flex'; $('#composer').classList.remove('locked');
+      this.renderHeader(); this.renderThread(); this.renderQuick(); $('#ta').focus();
+    }catch(e){ this.threadError('Could not start the conversation. Please try again.', null, true); }
+  },
+
+  async deleteCurrent(){
+    if(!this.session) return;
+    const id=this.session.id;
+    try{ await fetch(`/api/sessions/${id}`, {method:'DELETE'}); }catch(e){}
+    this.sessions=this.sessions.filter(s=>s.id!==id);
+    this.activeId=null; this.session=null;
+    this.renderConvs(); this.renderChatEmpty(); this.syncUrl();
+  },
+
+  async refreshSessions(){
+    try{ this.sessions = await this.get(`/api/sessions?customer_id=${this.cust.id}`); this.renderConvs(); }catch(e){}
+  },
+
+  /* ---------- empty / error views ---------- */
+  renderChatEmpty(){
+    $('#chatH').style.display='none';
+    $('#composer').classList.add('locked');
+    $('#quick').innerHTML='';
+    $('#threadInner').innerHTML = `<div class="blank">
+      <div class="bic"><span class="msym">${ACCOUNT_ICON}</span></div>
+      <h3>How can we help?</h3>
+      <p>Select a conversation on the left, or start a new one to get help with a return, refund or exchange.</p>
+      <div style="margin-top:18px"><button class="newbtn" style="font-size:13.5px;padding:9px 16px" onclick="App.openNew()"><span class="msym">add</span> New conversation</button></div>
+    </div>`;
+  },
+  threadError(msg, retry, transient){
+    const inner=$('#threadInner');
+    const old=inner.querySelector('.inline-err'); if(old) old.remove();
+    const e=document.createElement('div'); e.className='inline-err';
+    e.innerHTML=`<span class="msym">error</span><span>${msg}</span>${retry?'<button>Retry</button>':''}`;
+    if(retry) e.querySelector('button').onclick=retry;
+    inner.appendChild(e); this.scroll();
+    if(transient) setTimeout(()=>e.remove(), 6000);
+  },
+  fatal(msg){
+    $('#convs').innerHTML=`<div class="rail-empty"><span class="msym">cloud_off</span><p>${msg}</p></div>`;
+    $('#threadInner').innerHTML=`<div class="blank"><div class="bic"><span class="msym">cloud_off</span></div>
+      <h3>Can't connect</h3><p>${msg} Check that the service is running and reload.</p></div>`;
+  },
+
+  /* ---------- util ---------- */
+  statusMeta(status, phase){
+    if(phase==='awaiting_evidence'||status==='awaiting_evidence') return {label:'Needs a photo', cls:'await'};
+    if(phase==='confirming'||status==='awaiting_confirmation') return {label:'Awaiting you', cls:'await'};
+    if(status==='resolved') return {label:'Resolved', cls:'done'};
+    if(status==='escalated') return {label:'With our team', cls:'review'};
+    if(status==='denied') return {label:'Closed', cls:'closed'};
+    return {label:'Active', cls:'active'};
+  },
+  fmt(t){
+    let s=this.esc(t);
+    s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+    s=s.replace(/\n/g,'<br>');
+    return s;
+  },
+  esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); },
+  ago(ts){
+    if(!ts) return '';
+    const sec=Date.now()/1000 - ts;
+    if(sec<45) return 'now';
+    const m=sec/60; if(m<60) return Math.floor(m)+'m';
+    const h=m/60; if(h<24) return Math.floor(h)+'h';
+    const d=h/24; if(d<7) return Math.floor(d)+'d';
+    return new Date(ts*1000).toLocaleDateString([], {month:'short', day:'numeric'});
+  },
+  scroll(){ const t=$('#thread'); t.scrollTop=t.scrollHeight; },
+  grow(t){ t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,132)+'px'; },
+  keydown(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); this.send(); } },
+  delay(ms){ return new Promise(r=>setTimeout(r,ms)); },
+  toggleMenu(e){ e.stopPropagation(); $('#menu').classList.toggle('open'); },
+  closeMenu(){ $('#menu').classList.remove('open'); },
+  toggleRail(){ $('#rail').classList.toggle('mobile-open'); },
+  closeRail(){ $('#rail').classList.remove('mobile-open'); },
+  syncUrl(){
+    const p=new URLSearchParams();
+    if(this.cust) p.set('c', this.cust.id);
+    if(this.activeId) p.set('s', this.activeId);
+    history.replaceState(null,'', location.pathname+'?'+p.toString());
+  },
+  get(u){ return fetch(u).then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }); },
+  post(u,body){ return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }); },
+};
+
+document.addEventListener('click', e=>{ if(!e.target.closest('.who')) App.closeMenu(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') App.closeNew(); });
+App.boot();
+</script>
+</body>
+</html>

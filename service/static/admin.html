@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ReturnGuard — Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<style>
+/* ReturnGuard — shared design system. Dark · premium · neon-mint accent · glass · motion. */
+:root{
+  --bg:#06070b; --bg-2:#0a0c12; --panel:#0e1119;
+  --glass:rgba(255,255,255,.045); --glass-2:rgba(255,255,255,.07); --line:rgba(255,255,255,.09);
+  --ink:#eef2f9; --muted:#9aa6ba; --faint:#5e6b80;
+  --mint:#54f0a6; --cyan:#39d3ea; --violet:#9d8bff; --indigo:#6d5efc; --amber:#ffcf6b; --rose:#ff7a8a;
+  --grad:linear-gradient(120deg,#54f0a6 0%,#39d3ea 55%,#6db4ff 100%);
+  --grad-violet:linear-gradient(120deg,#9d8bff,#6d5efc);
+  --glow-mint:0 0 0 1px rgba(84,240,166,.3), 0 12px 50px -12px rgba(84,240,166,.45);
+  --display:'Plus Jakarta Sans',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+  --label:'Space Grotesk',system-ui,sans-serif;
+  --r:18px; --r-sm:13px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;
+     -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:var(--display);font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:0}
+::selection{background:var(--mint);color:#04110a}
+
+/* ambient aurora background */
+.aurora{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+.aurora i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:float 18s ease-in-out infinite}
+.aurora i:nth-child(1){width:520px;height:520px;background:#1f7d56;top:-160px;left:-120px}
+.aurora i:nth-child(2){width:480px;height:480px;background:#3a2f8f;top:20%;right:-160px;animation-delay:-6s}
+.aurora i:nth-child(3){width:420px;height:420px;background:#0e6b78;bottom:-180px;left:30%;animation-delay:-11s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-30px,20px) scale(.95)}}
+.grid-fade{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%)}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+     padding:15px 30px;backdrop-filter:blur(14px);background:rgba(6,7,11,.6);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800}
+.brand .logo{width:38px;height:38px;border-radius:11px;background:var(--grad);display:grid;place-items:center;
+     font-size:19px;color:#04110a;box-shadow:var(--glow-mint)}
+.brand small{display:block;font-family:var(--label);font-size:10.5px;color:var(--muted);letter-spacing:.18em;
+     text-transform:uppercase;margin-top:-1px;font-weight:500}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-links a{color:var(--muted);font-size:14px;padding:8px 13px;border-radius:10px;transition:.2s}
+.nav-links a:hover{color:var(--ink);background:var(--glass)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--body);font-weight:700;font-size:14.5px;
+     padding:12px 22px;border-radius:999px;border:1px solid var(--line);background:var(--glass);color:var(--ink);
+     cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s}
+.btn:hover{transform:translateY(-2px)}
+.btn-primary{background:var(--grad);color:#04110a;border:0;box-shadow:var(--glow-mint)}
+.btn-primary:hover{box-shadow:0 0 0 1px rgba(84,240,166,.5),0 18px 60px -10px rgba(84,240,166,.6)}
+.btn-ghost{background:transparent}
+.btn-ghost:hover{background:var(--glass-2);border-color:rgba(255,255,255,.18)}
+
+/* glass + utilities */
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(12px)}
+.glass:hover{border-color:rgba(255,255,255,.16)}
+.grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.label{font-family:var(--label);text-transform:uppercase;letter-spacing:.28em;font-size:11.5px;font-weight:500;color:var(--mint)}
+.pill{font-family:var(--label);font-size:11px;font-weight:600;padding:4px 11px;border-radius:999px;letter-spacing:.04em}
+.pill.mint{background:rgba(84,240,166,.12);color:var(--mint);border:1px solid rgba(84,240,166,.25)}
+.pill.violet{background:rgba(157,139,255,.13);color:var(--violet);border:1px solid rgba(157,139,255,.25)}
+.pill.amber{background:rgba(255,207,107,.12);color:var(--amber);border:1px solid rgba(255,207,107,.25)}
+.pill.dim{background:rgba(255,255,255,.06);color:var(--faint)}
+.dotline{width:8px;height:8px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint)}
+
+/* scroll-reveal */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
+
+/* avatars */
+.av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:700;font-size:13px;
+    background:var(--grad-violet);color:#fff}
+
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:10px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+
+</style>
+<style>
+  .material-symbols-outlined{font-size:20px;vertical-align:middle}
+  .live{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mint);font-weight:600;font-family:var(--label)}
+  .page{max-width:1320px;margin:26px auto;padding:0 28px}
+  h1{font-family:var(--display);font-size:24px;font-weight:800;margin:0 0 3px}
+  .lede{color:var(--muted);margin:0 0 22px;font-size:14.5px}
+
+  .cards{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:22px}
+  .card{padding:17px 18px;border-radius:16px}
+  .card .k{display:flex;align-items:center;gap:7px;color:var(--muted);font-family:var(--label);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+  .card .v{font-family:var(--display);font-size:28px;font-weight:800;margin-top:9px}
+  .card .c{font-size:11.5px;color:var(--faint);margin-top:3px}
+  .v.good{color:var(--mint)} .v.bad{color:var(--rose)}
+  @media(max-width:1180px){.cards{grid-template-columns:repeat(3,1fr)}} @media(max-width:680px){.cards{grid-template-columns:repeat(2,1fr)}}
+
+  .grid{display:grid;grid-template-columns:1.55fr 1fr;gap:20px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .panel{border-radius:18px;overflow:hidden}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .panel-h h2{font-family:var(--display);font-size:15px} .count{background:rgba(157,139,255,.14);color:var(--violet);font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px}
+  .body{padding:15px 16px}
+
+  .esc{border:1px solid var(--line);border-radius:15px;padding:15px;margin-bottom:12px;background:var(--glass)}
+  .esc:last-child{margin-bottom:0}
+  .esc-top{display:flex;align-items:flex-start;gap:12px}
+  .esc .rid{font-family:var(--label);font-weight:600;font-size:13px} .esc .fac{color:var(--faint);font-size:11.5px;margin-top:2px}
+  .risk{margin:14px 0 6px} .risk .lab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:6px}
+  .bar{height:7px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:999px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+  .rat{font-size:12.5px;color:var(--muted);margin:10px 0 14px;line-height:1.5}
+  .acts{display:flex;gap:8px} .acts button{font:inherit;font-weight:600;font-size:13px;border-radius:11px;cursor:pointer;padding:9px 0;flex:1;border:1px solid var(--line);background:var(--glass);color:var(--ink)}
+  .approve{background:var(--grad)!important;color:#04110a;border:0!important} .approve:hover{box-shadow:var(--glow-mint)}
+  .reject:hover{background:rgba(255,122,138,.12);color:var(--rose);border-color:rgba(255,122,138,.3)}
+  .modify:hover{background:var(--glass-2)}
+
+  .mix{display:flex;flex-direction:column;gap:12px}
+  .mix .r{display:grid;grid-template-columns:130px 1fr 26px;align-items:center;gap:10px;font-size:12.5px}
+  .mix .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+  .mix .track{height:9px;border-radius:999px;background:rgba(255,255,255,.07)}
+  .mix .track > i{display:block;height:100%;border-radius:999px;background:var(--grad);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+  .mix .n{font-family:var(--display);font-weight:700;text-align:right;color:var(--muted)}
+
+  .rec-row{display:flex;align-items:center;gap:10px;padding:11px 4px;border-top:1px solid var(--line);font-size:12.5px}
+  .rec-row:first-child{border-top:0} .rec-row a{font-family:var(--label);font-weight:600;color:var(--mint);width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rec-row .rc{color:var(--muted);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .empty{padding:34px 12px;text-align:center;color:var(--muted)} .empty .i{font-size:34px}
+  .empty h3{font-family:var(--display);margin:10px 0 2px;color:var(--ink)}
+</style>
+</head>
+<body>
+  <div class="aurora"><i></i><i></i><i></i></div>
+  <nav class="nav">
+    <a class="brand" href="/"><div class="logo">🛡️</div><div>ReturnGuard<small>Operations</small></div></a>
+    <div class="nav-links">
+      <span class="live"><span class="dotline"></span> LIVE</span>
+      <a href="/chat">Customer view</a>
+      <button class="btn btn-ghost" style="padding:9px 15px" onclick="refresh()"><span class="material-symbols-outlined">refresh</span> Refresh</button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <h1>Returns operations</h1>
+    <p class="lede">What the agent resolved automatically — and the consequential cases routed to you.</p>
+    <div class="cards" id="cards"></div>
+    <div class="panel glass" style="margin-bottom:20px">
+      <div class="panel-h"><h2>Tenant policies</h2><span class="count" id="coCount">0</span></div>
+      <div class="body">
+        <p style="margin:0 0 12px;color:var(--muted);font-size:13px">Upload a company's refund / replacement
+          guidelines. Their support chat then answers <b>from that document</b> — each query is embedded,
+          semantically matched, and the top paragraphs ground the agent (RAG per tenant).</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:9px;align-items:center">
+          <input id="coName" list="coList" placeholder="Company (e.g. Zomato)" style="background:var(--glass);
+            border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:13px;padding:9px 12px">
+          <datalist id="coList"></datalist>
+          <input id="docName" placeholder="Document name (e.g. refund-policy.md)" style="background:var(--glass);
+            border:1px solid var(--line);border-radius:10px;color:var(--ink);font:inherit;font-size:13px;padding:9px 12px">
+          <label class="btn btn-ghost" style="padding:8px 14px;font-size:13px;cursor:pointer">📄 Choose file
+            <input id="docFile" type="file" accept=".md,.txt,.text" style="display:none" onchange="fileChosen()"></label>
+          <button class="btn btn-primary" style="padding:8px 16px;font-size:13px" onclick="uploadPolicy()">Upload</button>
+        </div>
+        <textarea id="docText" rows="3" placeholder="…or paste the policy text here"
+          style="width:100%;margin-top:9px;background:var(--glass);border:1px solid var(--line);border-radius:10px;
+          color:var(--ink);font:inherit;font-size:12.5px;padding:9px 12px;resize:vertical"></textarea>
+        <div id="upMsg" style="font-size:12px;color:var(--mint);margin-top:6px;min-height:16px"></div>
+        <div id="coRows" style="margin-top:6px"></div>
+      </div>
+    </div>
+    <div class="panel glass" id="reviewsPanel" style="margin-bottom:20px;display:none">
+      <div class="panel-h"><h2>Chat cases awaiting your review</h2><span class="count" id="revCount">0</span></div>
+      <div class="body" id="reviews"></div>
+    </div>
+    <div class="grid">
+      <div class="panel glass">
+        <div class="panel-h"><h2>Escalation queue</h2><span class="count" id="escCount">0</span></div>
+        <div class="body" id="queue"></div>
+      </div>
+      <div>
+        <div class="panel glass" style="margin-bottom:20px">
+          <div class="panel-h"><h2>Action mix</h2></div><div class="body"><div class="mix" id="mix"></div></div>
+        </div>
+        <div class="panel glass">
+          <div class="panel-h"><h2>Recent resolutions</h2></div><div class="body"><div id="rec"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const $=s=>document.querySelector(s); const api=(u,o)=>fetch(u,o).then(r=>r.json());
+const pct=x=>(x*100).toFixed(1)+'%'; const fmt=n=>(''+n).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+function card(k,v,c,cls=''){return `<div class="card glass"><div class="k">${k}</div><div class="v ${cls}">${v}</div><div class="c">${c||''}</div></div>`}
+
+async function loadMetrics(){
+  const m=await api('/metrics/summary');
+  $('#cards').innerHTML=[
+    card('📥 Total',fmt(m.total_resolutions),'resolutions handled'),
+    card('🤖 Auto-resolved',pct(m.auto_resolution_rate),'no human needed','good'),
+    card('🙋 Escalated',pct(m.escalation_rate),'routed for review'),
+    card('🔁 Deflection',pct(m.deflection_rate),'returns avoided','good'),
+    card('💰 Saved','₹'+fmt(m.estimated_inr_saved_vs_always_refund),'vs always-refund'),
+    card('🛡️ Violations',m.guardrail_violation_count,'financial limits',m.guardrail_violation_count===0?'good':'bad'),
+  ].join('');
+  const dist=m.action_type_distribution||{}; const max=Math.max(1,...Object.values(dist));
+  const order=Object.entries(dist).sort((a,b)=>b[1]-a[1]);
+  $('#mix').innerHTML=order.length?order.map(([k,n])=>`<div class="r"><div class="nm">${k.replace(/_/g,' ')}</div>
+     <div class="track"><i style="width:${Math.max(8,n/max*100)}%"></i></div><div class="n">${n}</div></div>`).join('')
+     :`<div class="empty" style="padding:16px"><div class="i">📊</div>No resolutions yet</div>`;
+}
+async function loadQueue(){
+  const q=await api('/escalations'); $('#escCount').textContent=q.length;
+  if(!q.length){$('#queue').innerHTML=`<div class="empty"><div class="i">✅</div><h3>All clear</h3>No cases awaiting review.</div>`;return}
+  $('#queue').innerHTML=q.map(e=>{
+    const r=e.recommendation||{}; const pa=r.proposed_action||{}; const risk=r.risk_score??0;
+    const col=risk>=0.7?'var(--rose)':risk>=0.4?'var(--amber)':'var(--mint)';
+    return `<div class="esc"><div class="esc-top"><div style="flex:1"><div class="rid">${e.request_id}</div>
+        <div class="fac">${(r.risk_factors||[]).slice(0,2).join(', ')||'awaiting review'}</div></div>
+        <span class="pill violet">${(pa.action_type||'—').replace(/_/g,' ')}</span></div>
+      <div class="risk"><div class="lab"><span>Risk score</span><span style="color:${col};font-weight:700">${Number(risk).toFixed(2)}</span></div>
+        <div class="bar"><i style="width:${risk*100}%;background:${col}"></i></div></div>
+      <div class="rat">${r.rationale||'Recommendation pending operator review.'}</div>
+      <div class="acts"><button class="approve" onclick="decide('${e.request_id}','approve')">Approve</button>
+        <button class="modify" onclick="modify('${e.request_id}')">Modify</button>
+        <button class="reject" onclick="decide('${e.request_id}','reject')">Reject</button></div></div>`;
+  }).join('');
+}
+async function loadRecent(){
+  const rows=await api('/resolutions?limit=8');
+  $('#rec').innerHTML=rows.length?rows.map(r=>{const a=r.action_type||'—';
+    return `<div class="rec-row"><a href="/resolutions/${r.request_id}" target="_blank">${r.request_id}</a>
+       <span class="rc">${r.issue_type||'—'} · ${r.root_cause||'—'}</span>
+       <span class="pill ${a==='deny_with_explanation'?'dim':'mint'}">${a.replace(/_/g,' ')}</span></div>`;
+  }).join(''):`<div class="empty" style="padding:18px"><div class="i">🗂️</div>No resolutions yet</div>`;
+}
+let companies=[];
+async function loadCompanies(){
+  try{ companies=await api('/api/companies'); }catch(e){ companies=[]; }
+  $('#coCount').textContent=companies.length;
+  $('#coList').innerHTML=companies.map(c=>`<option value="${c.name}">`).join('');
+  $('#coRows').innerHTML=companies.length?companies.map(c=>
+    `<div class="rec-row"><span style="font-weight:600">${c.name}</span>
+      <span class="rc">${c.docs} document${c.docs===1?'':'s'} · ${c.chunks} paragraphs indexed</span>
+      <span class="pill mint">active</span></div>`).join(''):'';
+}
+function fileChosen(){
+  const f=$('#docFile').files[0]; if(!f)return;
+  if(!$('#docName').value) $('#docName').value=f.name;
+  const rd=new FileReader(); rd.onload=()=>{$('#docText').value=rd.result}; rd.readAsText(f);
+}
+async function uploadPolicy(){
+  const name=$('#coName').value.trim(), doc=$('#docName').value.trim(), text=$('#docText').value.trim();
+  const msg=$('#upMsg');
+  if(!name||!doc||text.length<40){ msg.style.color='var(--rose)'; msg.textContent='Need a company, a document name, and at least a paragraph of policy text.'; return; }
+  try{
+    let co=companies.find(c=>c.name.toLowerCase()===name.toLowerCase());
+    if(!co) co=await api('/api/companies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    const out=await api(`/api/companies/${co.id}/policies`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({doc_name:doc,text})});
+    msg.style.color='var(--mint)'; msg.textContent=`✓ Indexed ${out.chunks} paragraphs for ${name} — their chat now answers from this policy.`;
+    $('#docText').value=''; $('#docName').value=''; $('#docFile').value='';
+    loadCompanies();
+  }catch(e){ msg.style.color='var(--rose)'; msg.textContent='Upload failed — check the inputs and try again.'; }
+}
+async function loadReviews(){
+  const q=await api('/api/reviews'); const panel=$('#reviewsPanel'); $('#revCount').textContent=q.length;
+  if(!q.length){ panel.style.display='none'; return; }
+  panel.style.display='';
+  $('#reviews').innerHTML=q.map(r=>{
+    const pa=r.proposed_action||{}; const ev=r.evidence||{};
+    const cred=(r.credibility&&r.credibility.score!=null)?r.credibility.score:0.75;
+    const cc=cred>=0.55?'var(--mint)':cred>=0.3?'var(--amber)':'var(--rose)';
+    const reason=(r.reason||'review').replace(/_/g,' ');
+    const evtxt=ev.verdict?`Evidence <b style="color:${ev.verdict==='supports'?'var(--mint)':'var(--rose)'}">${ev.verdict}</b> (${Number(ev.confidence||0).toFixed(2)} conf)`:'No evidence provided';
+    return `<div class="esc"><div class="esc-top"><div style="flex:1">
+        <div class="rid">${r.customer_id} · ${r.title||'—'}</div>
+        <div class="fac">${reason}${r.vendor_notify?' · 🏷️ notify vendor':''} · ${(r.issue_type||'—').replace(/_/g,' ')}</div></div>
+        <span class="pill amber">${(pa.action_type||'needs decision').replace(/_/g,' ')}${pa.amount?(' ₹'+Number(pa.amount).toFixed(0)):''}</span></div>
+      <div class="risk"><div class="lab"><span>Customer credibility</span><span style="color:${cc};font-weight:700">${Number(cred).toFixed(2)}</span></div>
+        <div class="bar"><i style="width:${cred*100}%;background:${cc}"></i></div></div>
+      <div class="rat">${evtxt}${(r.policy_citations&&r.policy_citations.length)?
+        `<br><span style="color:var(--cyan)">Policy basis (${r.policy_company||'tenant'})</span>: ${r.policy_citations[0].text.slice(0,140)}…`:''}</div>
+      <div class="acts"><button class="approve" onclick="reviewDecide('${r.id}','approve')">Approve</button>
+        <button class="reject" onclick="reviewDecide('${r.id}','deny')">Deny</button>
+        <button class="reject" title="Deny and record a confirmed false/fraudulent claim (harsher credibility penalty)"
+          onclick="reviewDecide('${r.id}','deny',true)">Deny · fraud</button></div></div>`;
+  }).join('');
+}
+async function reviewDecide(id,decision,fraud){
+  await fetch(`/api/sessions/${id}/review`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({decision,reviewer_id:'console-operator',fraud:!!fraud})}); refresh();
+}
+async function decide(id,decision,modified){
+  await fetch(`/escalations/${id}/decision`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({decision,reviewer_id:'console-operator',modified_action:modified||null})}); refresh();
+}
+function modify(id){const at=prompt('Modified action_type (e.g. partial_refund):');if(!at)return;
+  const amt=parseFloat(prompt('Amount (₹):','0'))||0; decide(id,'modify',{action_type:at,amount:amt,params:{}});}
+function refresh(){loadMetrics();loadQueue();loadRecent();loadReviews();loadCompanies()}
+refresh(); setInterval(refresh,6000);
+</script>
+</body>
+</html>
