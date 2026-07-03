@@ -19,7 +19,8 @@ _CUST_RE = re.compile(r"\bCUST[-A-Z0-9]+\b", re.IGNORECASE)
 # Ordered keyword families → issue_type (first match wins).
 _ISSUE_RULES: list[tuple[tuple[str, ...], str]] = [
     (("too tight", "too loose", "too small", "too big", "size", "fit", "doesn't fit", "didnt fit"), "wrong_size"),
-    (("damaged", "broken", "defective", "defect", "not working", "stopped working", "dead on arrival", "cracked"), "damaged_item"),
+    (("damaged", "broken", "defective", "defect", "not working", "stopped working", "dead on arrival", "cracked",
+      "spoiled", "spoilt", "rotten", "expired", "mouldy", "moldy", "stale", "foul", "insect", "contaminated", "burnt"), "damaged_item"),
     (("wrong item", "different item", "not what i ordered", "incorrect item", "wrong product", "sent the wrong"), "wrong_item"),
     (("missing", "empty package", "part missing", "didn't receive", "not received item"), "missing_item"),
     (("late", "delay", "hasn't arrived", "still not delivered", "taking too long"), "late_delivery"),
