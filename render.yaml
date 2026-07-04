@@ -1,0 +1,31 @@
+# Render Blueprint — one-click deploy of the offline-capable demo.
+#
+# In Render: New → Blueprint → select this repo → Apply. No API keys required:
+# the stub LLM/embedder run deterministically, data is in-memory + SQLite, and a demo
+# tenant ("Zomato (demo)") is seeded at boot so the per-tenant RAG flow is always live.
+#
+# Note: the free tier has an ephemeral disk — chat sessions and uploaded tenant policies
+# reset on redeploy (the demo tenant is re-seeded automatically). Attach a persistent disk
+# or point RG_CHAT_DB at one to keep them.
+
+services:
+  - type: web
+    name: returnguard
+    runtime: python
+    plan: free
+    buildCommand: pip install .
+    startCommand: uvicorn service.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: LLM_PROVIDER
+        value: stub
+      - key: EMBEDDING_PROVIDER
+        value: stub
+      - key: ENVIRONMENT
+        value: dev
+      - key: AS_OF_DATE
+        value: "2026-06-22"   # dataset reference date — keeps seeded return windows open
+      - key: RG_SEED_DEMO
+        value: "1"

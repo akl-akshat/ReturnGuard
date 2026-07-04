@@ -44,6 +44,10 @@ async def lifespan(app: FastAPI):
     graph, cm = _build_graph_with_checkpointer()
     app.state.graph = graph
     app.state._checkpointer_cm = cm
+    from service import demo_seed
+
+    if demo_seed.seed_enabled():  # hosted demos: keep a sample tenant available (RG_SEED_DEMO=1)
+        demo_seed.ensure_demo_tenant()
     log.info("ReturnGuard service ready (llm=%s, env=%s)", settings.LLM_PROVIDER, settings.ENVIRONMENT)
     try:
         yield

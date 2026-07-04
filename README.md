@@ -140,6 +140,15 @@ curl -s localhost:8000/resolve -H 'content-type: application/json' -d '{
 Other paths: `POST /resolve/stream` (SSE, node-by-node); `GET /escalations` +
 `POST /escalations/{id}/decision` (HITL); `GET /resolutions`, `GET /metrics/summary`.
 
+## Deploy (free, no API keys)
+
+The demo deploys as-is to [Render](https://render.com) via the checked-in
+[`render.yaml`](render.yaml) blueprint: **New → Blueprint → select this repo → Apply**. It
+runs the deterministic stub providers (no keys), pins the demo clock so seeded return windows
+are open, and seeds a sample tenant ("Zomato (demo)") on boot so the per-tenant RAG flow is
+always demonstrable. Free-tier disk is ephemeral: sessions/uploads reset on redeploy (the demo
+tenant re-seeds automatically).
+
 ## Full stack (Postgres + Kafka + real Claude)
 
 ```bash
