@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from agent import conversation, credibility
 from agent.deps import get_deps
-from service import chat_store, policy_store
+from service import chat_store, platform_store, policy_store
 from tools.actions import execute_action, issue_goodwill_credit
 
 router = APIRouter()
@@ -62,10 +62,20 @@ class ReviewDecision(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
-def _order_title(order_id: str | None) -> str:
+class ClientReply(BaseModel):
+    reviewer_id: str = Field(..., min_length=1, max_length=80)
+    text: str = Field(..., min_length=1, max_length=1000)
+
+
+def _resolve_order(order_id: str | None) -> dict | None:
+    """An order may live in the seeded core dataset or in a client's platform order DB."""
     if not order_id:
-        return "New conversation"
-    o = get_deps().data_access.get_order(order_id)
+        return None
+    return get_deps().data_access.get_order(order_id) or platform_store.get_order(order_id)
+
+
+def _order_title(order_id: str | None) -> str:
+    o = _resolve_order(order_id)
     return o["title"] if o else "New conversation"
 
 
@@ -82,17 +92,29 @@ def list_sessions(customer_id: str) -> list[dict]:
 @router.post("/api/sessions")
 def create_session(body: CreateSession) -> dict:
     deps = get_deps()
-    if not deps.repo.get_customer(body.customer_id):
+    # identity: a seeded core customer OR a universal platform user (phone-keyed)
+    platform_user = platform_store.get_user(body.customer_id)
+    if not platform_user and not deps.repo.get_customer(body.customer_id):
         raise HTTPException(status_code=404, detail="customer not found")
-    if body.order_id and not deps.repo.get_order(body.order_id):
+
+    order = _resolve_order(body.order_id)
+    if body.order_id and not order:
         raise HTTPException(status_code=404, detail="order not found")
-    if body.company_id and not policy_store.get_company(body.company_id):
+    company_id = body.company_id
+    if order and order.get("company_id"):
+        # a client-DB order must belong to this customer and auto-binds the client's policy
+        if not platform_user or order.get("phone") != platform_user["phone"]:
+            raise HTTPException(status_code=403, detail="order does not belong to this customer")
+        company_id = order["company_id"]
+    if company_id and not policy_store.get_company(company_id):
         raise HTTPException(status_code=404, detail="company not found")
 
     sess = chat_store.create_session(body.customer_id, body.order_id, _order_title(body.order_id),
-                                     company_id=body.company_id)
-    order = deps.data_access.get_order(body.order_id) if body.order_id else None
-    chat_store.add_message(sess["id"], "assistant", conversation.greeting(deps, body.customer_id, order))
+                                     company_id=company_id)
+    chat_store.add_message(
+        sess["id"], "assistant",
+        conversation.greeting(deps, body.customer_id, order,
+                              customer_name=(platform_user or {}).get("name")))
     return chat_store.get_session(sess["id"], with_messages=True)
 
 
@@ -122,14 +144,14 @@ def post_message(session_id: str, body: PostMessage) -> dict:
     display = "📎 Shared a photo" if (body.evidence and not body.text.strip()) else body.text
     chat_store.add_message(session_id, "user", display)
 
+    order = _resolve_order(session.get("order_id"))
+
     # Tenant RAG: embed the query and semantically search the bound company's uploaded policy;
     # the top paragraphs ground this turn's replies and any escalation context.
     policy_ctx = None
     if session.get("company_id") and body.text.strip():
         company = policy_store.get_company(session["company_id"])
         if company:
-            deps = get_deps()
-            order = deps.data_access.get_order(session["order_id"]) if session.get("order_id") else None
             q = body.text
             if order:
                 q += f" {order['category']}"
@@ -140,9 +162,12 @@ def post_message(session_id: str, body: PostMessage) -> dict:
             if chunks:
                 policy_ctx = {"company": company["name"], "chunks": chunks}
 
+    # Real refund history for this customer+order, so status questions get real answers.
+    refund_ctx = chat_store.refund_status_for(session["customer_id"], session.get("order_id"))
+
     evidence = body.evidence.model_dump() if body.evidence else None
     result = conversation.handle_turn(get_deps(), session, body.text, evidence=evidence,
-                                      policy_ctx=policy_ctx)
+                                      policy_ctx=policy_ctx, order=order, refund_ctx=refund_ctx)
 
     out_msgs = [chat_store.add_message(session_id, "assistant", m["text"], m["meta"]) for m in result.messages]
     if result.credibility_outcome:
@@ -158,10 +183,15 @@ def post_message(session_id: str, body: PostMessage) -> dict:
 
 # --------------------------------------------------------------- operator review
 @router.get("/api/reviews")
-def list_reviews() -> list[dict]:
-    """Chat cases awaiting a human decision, with the context the agent gathered."""
+def list_reviews(company_id: str | None = None) -> list[dict]:
+    """Chat cases awaiting a human decision, with the context the agent gathered.
+
+    ``company_id`` scopes the queue to one client's portal — each brand reviews only the
+    escalations on ITS orders/policy."""
     out = []
     for s in chat_store.list_reviews():
+        if company_id and s.get("company_id") != company_id:
+            continue
         st = s.get("state") or {}
         out.append({
             "id": s["id"], "customer_id": s["customer_id"], "order_id": s.get("order_id"),
@@ -177,6 +207,24 @@ def list_reviews() -> list[dict]:
     return out
 
 
+@router.post("/api/sessions/{session_id}/reply")
+def client_reply(session_id: str, body: ClientReply) -> dict:
+    """A human at the client writes into the SAME customer chat the escalation came from.
+
+    The customer sees the specialist's words in their thread; the case stays open for the
+    formal approve/deny decision (which is what moves money and credibility)."""
+    session = chat_store.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="session not found")
+    if session.get("status") != "escalated":
+        raise HTTPException(status_code=409, detail="session is not with a specialist")
+    company = policy_store.get_company(session["company_id"]) if session.get("company_id") else None
+    who = f"{company['name']} specialist" if company else "Support specialist"
+    msg = chat_store.add_message(session_id, "assistant", f"👤 **{who} ({body.reviewer_id})**: {body.text}",
+                                 {"kind": "human_reply", "reviewer_id": body.reviewer_id})
+    return msg
+
+
 @router.post("/api/sessions/{session_id}/review")
 def review_session(session_id: str, body: ReviewDecision) -> dict:
     """Operator decision on an escalated chat. Resolves/denies the session and feeds the
@@ -190,7 +238,7 @@ def review_session(session_id: str, body: ReviewDecision) -> dict:
     deps = get_deps()
     st = dict(session.get("state") or {})
     cust = session["customer_id"]
-    order = deps.data_access.get_order(session["order_id"]) if session.get("order_id") else None
+    order = _resolve_order(session.get("order_id"))
     reason = st.get("escalation_reason", "")
 
     try:

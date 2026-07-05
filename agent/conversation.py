@@ -186,8 +186,8 @@ def _cred_score(session: dict[str, Any]) -> float:
 
 
 # --- text generators ----------------------------------------------------------
-def greeting(deps: Deps, customer_id: str, order: dict | None) -> str:
-    who = _fname(deps, customer_id)
+def greeting(deps: Deps, customer_id: str, order: dict | None, customer_name: str | None = None) -> str:
+    who = customer_name.split(" ")[0] if customer_name else _fname(deps, customer_id)
     if order:
         return (f"Hi {who}! 👋 I can see your **{order['title']}** (delivered {order.get('delivery_date','recently')}). "
                 "What's the problem — wrong size, damaged, faulty, wrong item, or something else?")
@@ -204,7 +204,34 @@ def clarify(text: str, order: dict | None) -> str:
     ])
 
 
-def answer_question(text: str, order: dict | None, policy_ctx: dict | None = None) -> str:
+def answer_question(text: str, order: dict | None, policy_ctx: dict | None = None,
+                    refund_ctx: dict | None = None) -> str:
+    t0 = _norm(text)
+    # Refund-status questions answer from the customer's ACTUAL history, never boilerplate:
+    # a processed resolution reports its action/amount; a case with a specialist says so; and
+    # if nothing is due, we say that clearly and ask for the issue so we can check further.
+    # Status intent only — "what is your refund POLICY" must still go to policy grounding.
+    _status_cue = any(w in t0 for w in ("where", "status", "when will", "when do", "track",
+                                        "not received", "haven't got", "have not got", "didn't get"))
+    if refund_ctx is not None and _status_cue and any(
+            w in t0 for w in ("refund", "money back", "my money")):
+        res = refund_ctx.get("resolutions") or []
+        pend = refund_ctx.get("pending_review") or []
+        item = f" for your **{order['title']}**" if order else ""
+        if res:
+            r0 = res[0]
+            label = _ACTION_LABEL.get(r0["action_type"], (r0["action_type"] or "a resolution").replace("_", " "))
+            amt = f" of ₹{r0['amount']:.0f}" if r0["amount"] else ""
+            return (f"I checked your account{item}: **{label}{amt}** has been processed. "
+                    "Refunds reflect in your original payment method within 3–5 business days of "
+                    "processing. Anything else I can help with?")
+        if pend:
+            return (f"I checked{item}: your case is **with our specialist team** right now — no money has "
+                    "moved yet, and they'll follow up shortly. I'll make sure your context is with them.")
+        return (f"I've checked your account{item}: **there's no refund due or in process right now** — "
+                "no claim has been approved on this order yet. Tell me what went wrong (damaged, wrong "
+                "item, quality, size…) and I'll look into it properly.")
+
     # RAG-grounded: when the session is bound to a company, answer FROM their uploaded policy —
     # the top retrieved paragraphs are the context (a real LLM composes over the same context
     # when LLM_PROVIDER=anthropic; offline the stub quotes the most relevant excerpt verbatim).
@@ -309,12 +336,14 @@ def _review_card(reason: str) -> dict:
 # --- the turn -----------------------------------------------------------------
 def handle_turn(deps: Deps, session: dict[str, Any], text: str,
                 evidence: dict[str, Any] | None = None,
-                policy_ctx: dict[str, Any] | None = None) -> TurnResult:
+                policy_ctx: dict[str, Any] | None = None,
+                order: dict[str, Any] | None = None,
+                refund_ctx: dict[str, Any] | None = None) -> TurnResult:
     st = dict(session.get("state") or {})
     phase = session.get("phase", "greeting")
     order_id = session.get("order_id")
     cust = session["customer_id"]
-    order = _order(deps, order_id)
+    order = order or _order(deps, order_id)  # platform (client-DB) orders are injected by the route
     intent = detect_intent(text, phase)
     r = TurnResult(phase=phase, status=session.get("status", "open"), order_id=order_id, state=st)
 
@@ -333,7 +362,7 @@ def handle_turn(deps: Deps, session: dict[str, Any], text: str,
         if intent == "thanks":
             r.say("You're welcome! 🙌")
         elif intent == "question":
-            r.say(answer_question(text, order, policy_ctx))
+            r.say(answer_question(text, order, policy_ctx, refund_ctx))
         else:
             r.say(locked_text())
         return r
@@ -348,7 +377,8 @@ def handle_turn(deps: Deps, session: dict[str, Any], text: str,
             # declines to substantiate → we can't verify → a human reviews it (no auto remedy)
             return _to_human(deps, session, st, order, r, reason="no_evidence")
         if intent == "question":
-            r.say(answer_question(text, order) + " " + evidence_ask(st.get("evidence_kind", "a photo"), order))
+            r.say(answer_question(text, order, policy_ctx, refund_ctx) + " "
+                  + evidence_ask(st.get("evidence_kind", "a photo"), order))
         else:
             r.say(evidence_ask(st.get("evidence_kind", "a photo of the problem"), order))
         r.phase, r.status, r.state = "awaiting_evidence", "awaiting_evidence", st
@@ -365,7 +395,7 @@ def handle_turn(deps: Deps, session: dict[str, Any], text: str,
         if intent != "issue":
             # question / greeting / unclear while a proposal is pending — keep it on the table
             pending = st.get("proposed_action") or {}
-            lead = (answer_question(text, order) + " ") if intent == "question" else ""
+            lead = (answer_question(text, order, policy_ctx, refund_ctx) + " ") if intent == "question" else ""
             r.say(lead + _reconfirm(pending, order),
                   meta=_card(pending, pending=True) if pending else None)
             r.phase, r.status, r.state = "confirming", "awaiting_confirmation", st
@@ -388,7 +418,7 @@ def handle_turn(deps: Deps, session: dict[str, Any], text: str,
 
     # 5) a direct question / options
     if intent == "question":
-        r.say(answer_question(text, order, policy_ctx),
+        r.say(answer_question(text, order, policy_ctx, refund_ctx),
               meta={"kind": "policy", "company": policy_ctx.get("company"),
                     "citations": [{"doc": c["doc_name"], "seq": c["seq"]}
                                   for c in policy_ctx["chunks"][:3]]}

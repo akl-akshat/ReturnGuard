@@ -43,6 +43,12 @@ def operator_console() -> str:
     return (_STATIC / "admin.html").read_text(encoding="utf-8")
 
 
+@router.get("/client", response_class=HTMLResponse)
+def client_console() -> str:
+    """Per-client (brand) portal: their review queue, order DB and policy documents."""
+    return (_STATIC / "client.html").read_text(encoding="utf-8")
+
+
 @router.get("/dashboard", response_class=HTMLResponse)
 def dashboard_alias() -> str:
     return (_STATIC / "admin.html").read_text(encoding="utf-8")
