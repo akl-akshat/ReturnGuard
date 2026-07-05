@@ -20,8 +20,26 @@ from pydantic import BaseModel, Field, model_validator
 
 from agent import conversation, credibility
 from agent.deps import get_deps
-from service import chat_store, platform_store, policy_store
+from service import chat_store, platform_store, policy_store, wallet_store
 from tools.actions import execute_action, issue_goodwill_credit
+
+# refund-type actions pay the customer — on the platform they land in the ReturnGuard wallet
+_WALLET_ACTIONS = {"instant_refund", "partial_refund", "store_credit_refund", "goodwill_credit"}
+
+
+def _credit_wallet_if_refund(session: dict, action: dict | None, request_id: str) -> None:
+    """A resolved refund for a platform customer credits their wallet (idempotent by request)."""
+    if not action or action.get("action_type") not in _WALLET_ACTIONS:
+        return
+    if not str(session.get("customer_id", "")).startswith("PU-"):
+        return
+    amount = float(action.get("amount") or 0)
+    if amount <= 0:
+        return
+    company = policy_store.get_company(session["company_id"]) if session.get("company_id") else None
+    wallet_store.credit(session["customer_id"], amount, "refund",
+                        brand=(company or {}).get("name"),
+                        note=f"Refund — {session.get('title', 'order')}", ref=request_id)
 
 router = APIRouter()
 
@@ -178,6 +196,12 @@ def post_message(session_id: str, body: PostMessage) -> dict:
         title = _order_title(result.order_id)
     chat_store.update_session(session_id, phase=result.phase, status=result.status,
                               order_id=result.order_id, title=title, state=result.state)
+
+    # auto-resolved refunds for platform customers land in their ReturnGuard wallet
+    res = (result.state or {}).get("resolution")
+    if result.status == "resolved" and res:
+        _credit_wallet_if_refund(session, res, res.get("request_id") or f"{session_id}:auto")
+
     return {"messages": out_msgs, "phase": result.phase, "status": result.status, "order_id": result.order_id}
 
 
@@ -271,6 +295,8 @@ def review_session(session_id: str, body: ReviewDecision) -> dict:
         chat_store.add_message(session_id, "assistant", msg, card)
         st["locked"] = True
         chat_store.update_session(session_id, phase="resolved", status="resolved", state=st)
+        if executed:
+            _credit_wallet_if_refund(session, executed, rid)
         # Reward genuine only when a claim was actually assessed and supported — approving a
         # "customer asked for a human" case (no claim) must not farm credibility upward.
         if (st.get("evidence") or {}).get("verdict") == "supports":
