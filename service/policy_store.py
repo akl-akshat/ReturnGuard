@@ -132,6 +132,8 @@ def list_companies() -> list[dict[str, Any]]:
 # ------------------------------------------------------------------ documents
 def upload_policy(company_id: str, doc_name: str, text: str) -> dict[str, Any]:
     """Chunk + embed + store a policy document (replacing any same-named doc)."""
+    from service import cache
+
     init()
     chunks = chunk_document(text)
     now = chat_store._now()
@@ -143,6 +145,7 @@ def upload_policy(company_id: str, doc_name: str, text: str) -> dict[str, Any]:
                 "VALUES (?,?,?,?,?,?)",
                 (company_id, doc_name, i, ch, json.dumps(embed_text(ch)), now),
             )
+    cache.invalidate(f"chunks:{company_id}")   # fresh corpus on the next turn
     return {"company_id": company_id, "doc_name": doc_name, "chunks": len(chunks)}
 
 
@@ -157,19 +160,33 @@ def list_documents(company_id: str) -> list[dict[str, Any]]:
 
 
 # ------------------------------------------------------------------ search (RAG)
-def search(company_id: str, query: str, k: int = TOP_K) -> list[dict[str, Any]]:
-    """Semantic search: embed the query, cosine-rank the company's chunks, return top-k."""
+def _chunks_for(company_id: str) -> list[dict[str, Any]]:
+    """The company's chunk corpus with parsed embeddings — cached (hit on every chat turn)."""
+    from service import cache
+
+    key = f"chunks:{company_id}"
+    hit = cache.get(key)
+    if hit is not None:
+        return hit
     init()
-    q = embed_text(query or "")
     with _conn() as c:
         rows = c.execute(
             "SELECT doc_name, seq, text, embedding FROM policy_chunks WHERE company_id=?",
             (company_id,)
         ).fetchall()
+    out = [{"doc_name": r["doc_name"], "seq": r["seq"], "text": r["text"],
+            "emb": json.loads(r["embedding"])} for r in rows]
+    cache.set(key, out)
+    return out
+
+
+def search(company_id: str, query: str, k: int = TOP_K) -> list[dict[str, Any]]:
+    """Semantic search: embed the query, cosine-rank the company's chunks, return top-k."""
+    q = embed_text(query or "")
     scored = [
-        {"doc_name": r["doc_name"], "seq": r["seq"], "text": r["text"],
-         "score": round(cosine(q, json.loads(r["embedding"])), 4)}
-        for r in rows
+        {"doc_name": ch["doc_name"], "seq": ch["seq"], "text": ch["text"],
+         "score": round(cosine(q, ch["emb"]), 4)}
+        for ch in _chunks_for(company_id)
     ]
     scored.sort(key=lambda s: s["score"], reverse=True)
     return scored[:k]
