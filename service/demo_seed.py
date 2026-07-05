@@ -113,8 +113,9 @@ def ensure_platform_demo() -> None:
     from datetime import timedelta
 
     from config.settings import settings
-    from service import platform_store, policy_store, rep_store
+    from service import auth_store, platform_store, policy_store, rep_store
 
+    auth_store.init()  # ensures the bootstrap admin credential (admin / admin123)
     companies: dict[str, dict] = {}
     for brand in CLIENT_BRANDS:
         co = policy_store.get_company_by_name(brand) or policy_store.create_company(brand)
@@ -122,9 +123,13 @@ def ensure_platform_demo() -> None:
         if brand != DEMO_COMPANY and not policy_store.list_documents(co["id"]):
             policy_store.upload_policy(co["id"], f"{brand.lower().split(' ')[0]}-guidelines.md",
                                        GENERIC_POLICY.format(brand=brand))
+        slug = auth_store.slugify(brand)
+        auth_store.ensure_credential("client", co["id"], slug, f"{slug}123", created_by="seed")
         if not rep_store.reps_for_company(co["id"]):
             for rep_name in BRAND_REPS.get(brand, []):
-                rep_store.add_rep(co["id"], rep_name)
+                rep = rep_store.add_rep(co["id"], rep_name)
+                auth_store.ensure_credential("rep", rep["id"], auth_store.slugify(rep_name),
+                                             "rep123", created_by="seed")
 
     for phone, name in PLATFORM_USERS:
         platform_store.upsert_user(phone, name)
