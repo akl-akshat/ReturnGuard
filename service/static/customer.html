@@ -232,6 +232,7 @@ async function loadConvs(){
   const pill=x=> x.status==='escalated'?'<span class="pill violet"><span class="dot"></span>With specialist</span>'
     : x.status==='resolved'?'<span class="pill green"><span class="dot"></span>Resolved</span>'
     : x.status==='denied'?'<span class="pill gray"><span class="dot"></span>Closed</span>'
+    : x.status==='closed'?'<span class="pill gray"><span class="dot"></span>Closed — no issue</span>'
     : (x.status==='awaiting_confirmation'||x.status==='awaiting_evidence')?'<span class="pill amber"><span class="dot"></span>Needs you</span>'
     : '<span class="pill blue"><span class="dot"></span>Active</span>';
   const row=x=>`<div class="row" style="cursor:pointer" onclick="location.href='/chat?c=${U.id}&s=${x.id}'">

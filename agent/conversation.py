@@ -77,6 +77,14 @@ _HUMAN_WORDS = ("talk to a human", "speak to a human", "talk to a person", "spea
                 "talk to someone", "speak to someone", "real person", "human agent",
                 "customer service", "representative", "speak to a manager", "talk to a manager",
                 "human being", "escalate to a human")
+# "nothing is wrong — close this": opened by mistake, all good, never mind. Multi-word phrases
+# so a genuine complaint like "it is not good" can never match.
+_DISMISS = ("by mistake", "opened this by mistake", "it is good", "it's good", "its good",
+            "all good", "everything is fine", "everything is good", "everything is ok",
+            "no issue", "no issues", "nothing wrong", "nothing is wrong", "issue resolved",
+            "problem resolved", "already resolved", "never mind", "nevermind", "no help needed",
+            "dont need help", "don't need help", "wrong chat", "accidentally opened",
+            "it is fine", "it's fine", "its fine", "all sorted", "no complaint")
 
 _ACTION_LABEL = {
     "exchange_with_size_guide": "a free size exchange for the correct size",
@@ -137,7 +145,9 @@ def _has_word(t: str, words) -> bool:
 def detect_intent(text: str, phase: str) -> str:
     t = _norm(text)
     words = t.split()
-    if phase == "confirming":
+    dismissive = _is(t, _DISMISS) and not _is(t, ("not good", "not fine", "not ok",
+                                                  "not resolved", "isn't good", "isnt good"))
+    if phase == "confirming" and not dismissive:
         neg = _has_word(t, _DENY)
         hedged = _has_word(t, _HEDGE)
         affirm = _has_word(t, _AFFIRM) and not _is(t, _RESOLUTION_WORDS)
@@ -151,6 +161,10 @@ def detect_intent(text: str, phase: str) -> str:
         # otherwise fall through — understand it as a question / new issue / unclear reply
     if _has_word(t, _HUMAN_WORDS):
         return "human"
+    # "nothing's wrong / close this" — must beat the issue check ("issue resolved" contains
+    # 'issue') and never fire when the sentence carries a complaint or negation around it.
+    if dismissive:
+        return "dismiss"
     if len(words) <= 4 and _has_word(t, _GREET) and not _is(t, _RESOLUTION_WORDS) and classify_issue(t) == "other":
         return "greet"
     if _has_word(t, _THANKS):
@@ -314,6 +328,13 @@ def human_text(reason: str) -> str:
     return base
 
 
+def close_text(order: dict | None) -> str:
+    item = f" with your **{order['title']}**" if order else ""
+    return (f"No problem at all — glad everything's good{item}! 😊 I've closed this conversation. "
+            "If anything does come up with this order later, just message here and we'll pick it "
+            "right back up.")
+
+
 def locked_text() -> str:
     return random.choice([
         "This conversation has already been resolved. If you have a **different order or a new issue**, please start "
@@ -384,8 +405,22 @@ def handle_turn(deps: Deps, session: dict[str, Any], text: str,
                   "They'll reply right here with your full context. 🙏")
         elif intent == "question" or is_status_query(text):
             r.say(answer_question(text, order, policy_ctx, refund_ctx))
+        elif intent == "dismiss":
+            r.say("Glad everything's sorted! 😊 This conversation stays closed — message here "
+                  "anytime if you need it again.")
         else:
             r.say(locked_text())
+        return r
+
+    # 0.5) "nothing's wrong — I opened this by mistake / it's all good": close gracefully.
+    # Any pending proposal or evidence request is discarded (nothing executes), the session
+    # is NOT hard-locked, and a later real issue simply reopens this same conversation.
+    if intent == "dismiss":
+        for k in ("proposed_action", "evidence", "evidence_kind", "issue_text", "issue_type",
+                  "root_cause", "reject_count"):
+            st.pop(k, None)
+        r.say(close_text(order))
+        r.phase, r.status, r.state = "closed", "closed", st
         return r
 
     # 1) awaiting the customer's evidence for a money-moving claim

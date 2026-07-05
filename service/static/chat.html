@@ -474,6 +474,8 @@ const App = {
       chips=[{l:'Yes, go ahead',a:'text',c:'yes'},{l:'No',a:'text',c:'no'},{l:'Talk to a human',a:'human',c:''}];
     } else if(s.status==='escalated'){
       chips=[{l:"What's the status?",a:'text',c:''},{l:'Talk to a human',a:'human',c:''}];
+    } else if(s.status==='closed'){
+      chips=[{l:'I actually have an issue',a:'text',c:''},{l:'New request (other order)',a:'new',c:''}];
     } else if(s.status==='resolved'||s.status==='denied'){
       chips=[{l:"Track my request",a:'text',c:''},{l:'Talk to a human',a:'human',c:''},{l:'New request (other order)',a:'new',c:''}];
       if(s.company_id && !s.rated){
@@ -752,6 +754,7 @@ const App = {
     if(status==='resolved') return {label:'Resolved', cls:'done'};
     if(status==='escalated') return {label:'With our team', cls:'review'};
     if(status==='denied') return {label:'Closed', cls:'closed'};
+    if(status==='closed') return {label:'Closed — no issue', cls:'closed'};
     return {label:'Active', cls:'active'};
   },
   fmt(t){

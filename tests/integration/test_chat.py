@@ -288,7 +288,56 @@ def test_review_rejects_non_escalated_session(client):
                        json={"decision": "approve", "reviewer_id": "op-1"}).status_code == 409
 
 
+# ----------------------------------------------------------- dismissal ("opened by mistake")
+def test_opened_by_mistake_closes_gracefully_and_reopens(client):
+    s = _new(client, "CUST-LOW1", EARBUDS)
+    r = _turn(client, s["id"], "hi by mistake i opened this it is good")
+    assert r["status"] == "closed" and r["phase"] == "closed"
+    assert "closed this conversation" in r["messages"][0]["text"]
+    assert "proposal" not in _kinds(r["messages"])
+    # the same phrases from the report: "issue resolved" keeps it closed, not clarify-looping
+    r = _turn(client, s["id"], "issue resolved")
+    assert r["status"] == "closed"
+    # NOT hard-locked: a real problem later reopens THIS conversation (one chat per order)
+    r = _turn(client, s["id"], "actually it arrived damaged and won't turn on")
+    assert r["phase"] == "awaiting_evidence"
+
+
+def test_dismiss_during_evidence_wait_closes_instead_of_escalating(client):
+    s = _new(client, "CUST-LOW1", APPAREL)
+    _turn(client, s["id"], "too tight")                       # -> awaiting_evidence
+    r = _turn(client, s["id"], "never mind, it is fine actually")
+    assert r["status"] == "closed"                            # NOT escalated to a human
+    assert "resolution" not in _kinds(r["messages"])
+
+
+def test_dismiss_during_confirmation_discards_the_proposal(client):
+    s = _new(client, "CUST-NEW1", DEFECT_ELEC)
+    _turn(client, s["id"], "it arrived damaged and won't turn on")
+    _turn(client, s["id"], evidence=STRONG)                   # -> confirming (replacement)
+    r = _turn(client, s["id"], "issue resolved, no help needed")
+    assert r["status"] == "closed"
+    assert "resolution" not in _kinds(r["messages"])          # nothing executed
+    full = client.get(f"/api/sessions/{s['id']}").json()
+    assert not full["state"].get("proposed_action")           # proposal discarded
+
+
+def test_complaint_wording_never_dismisses(client):
+    s = _new(client, "CUST-LOW1", EARBUDS)
+    r = _turn(client, s["id"], "it is not good, the sound is damaged")
+    assert r["status"] != "closed"                            # treated as an issue, not a dismissal
+
+
 # ----------------------------------------------------------- intent gate (pure)
+def test_detect_intent_dismissal():
+    d = lambda t: conversation.detect_intent(t, "open")  # noqa: E731
+    assert d("hi by mistake i opened this it is good") == "dismiss"
+    assert d("issue resolved") == "dismiss"
+    assert d("never mind, all good") == "dismiss"
+    assert d("it is not good") != "dismiss"
+    assert conversation.detect_intent("it is fine actually", "awaiting_evidence") == "dismiss"
+
+
 def test_detect_intent_confirmation_gate():
     c = lambda t: conversation.detect_intent(t, "confirming")  # noqa: E731
     assert c("yes go ahead") == "confirm"
