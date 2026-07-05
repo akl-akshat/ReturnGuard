@@ -80,6 +80,15 @@ CLIENT_ORDERS = [
 
 CLIENT_BRANDS = ["Zomato (demo)", "Swiggy", "Blinkit", "Flipkart", "Amazon"]
 
+# two support representatives per brand — complaints get assigned to whoever is available
+BRAND_REPS = {
+    "Zomato (demo)": ["Neha Kapoor", "Ravi Iyer"],
+    "Swiggy": ["Arjun Mehta", "Sana Sheikh"],
+    "Blinkit": ["Kavya Reddy", "Dev Patel"],
+    "Flipkart": ["Ishaan Gupta", "Meera Joshi"],
+    "Amazon": ["Rohit Bansal", "Ananya Das"],
+}
+
 
 def seed_enabled() -> bool:
     return os.environ.get("RG_SEED_DEMO", "").strip() in ("1", "true", "yes")
@@ -104,7 +113,7 @@ def ensure_platform_demo() -> None:
     from datetime import timedelta
 
     from config.settings import settings
-    from service import platform_store, policy_store
+    from service import platform_store, policy_store, rep_store
 
     companies: dict[str, dict] = {}
     for brand in CLIENT_BRANDS:
@@ -113,6 +122,9 @@ def ensure_platform_demo() -> None:
         if brand != DEMO_COMPANY and not policy_store.list_documents(co["id"]):
             policy_store.upload_policy(co["id"], f"{brand.lower().split(' ')[0]}-guidelines.md",
                                        GENERIC_POLICY.format(brand=brand))
+        if not rep_store.reps_for_company(co["id"]):
+            for rep_name in BRAND_REPS.get(brand, []):
+                rep_store.add_rep(co["id"], rep_name)
 
     for phone, name in PLATFORM_USERS:
         platform_store.upsert_user(phone, name)

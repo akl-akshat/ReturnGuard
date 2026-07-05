@@ -16,15 +16,18 @@ from agent.graph import build_graph
 from config.settings import settings
 from observability.logging import configure_logging
 from service.routes import (
+    auth,
     chat,
     escalations,
     health,
     metrics,
     platform,
     portal,
+    reps,
     resolutions,
     resolve,
     tenants,
+    wallet,
 )
 
 log = logging.getLogger("service")
@@ -82,3 +85,6 @@ app.include_router(portal.router, tags=["portal"])
 app.include_router(chat.router, tags=["chat"])
 app.include_router(tenants.router, tags=["tenants"])
 app.include_router(platform.router, tags=["platform"])
+app.include_router(auth.router, tags=["auth"])
+app.include_router(wallet.router, tags=["wallet"])
+app.include_router(reps.router, tags=["reps"])

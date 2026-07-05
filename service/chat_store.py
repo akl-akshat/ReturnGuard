@@ -150,6 +150,35 @@ def refund_status_for(customer_id: str, order_id: str | None) -> dict[str, Any]:
     return {"resolutions": resolutions, "pending_review": pending}
 
 
+def sessions_for_company(company_id: str) -> list[dict[str, Any]]:
+    """All sessions bound to one client brand (for the client portal's stats/chart)."""
+    init()
+    with _conn() as c:
+        rows = c.execute("SELECT * FROM sessions WHERE company_id=? ORDER BY updated_at DESC",
+                         (company_id,)).fetchall()
+    return [_sess_row(r) for r in rows]
+
+
+def recent_updates_for(customer_id: str, limit: int = 8) -> list[dict[str, Any]]:
+    """Latest assistant/specialist messages across the customer's conversations (their
+    dashboard notification rail). Human replies rank as what they are — updates."""
+    init()
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT m.text, m.meta, m.created_at, s.id AS session_id, s.title, s.status "
+            "FROM messages m JOIN sessions s ON s.id = m.session_id "
+            "WHERE s.customer_id=? AND m.role='assistant' "
+            "ORDER BY m.created_at DESC, m.id DESC LIMIT ?",
+            (customer_id, limit)).fetchall()
+    out = []
+    for r in rows:
+        meta = json.loads(r["meta"] or "{}")
+        out.append({"session_id": r["session_id"], "title": r["title"], "status": r["status"],
+                    "kind": meta.get("kind") or "message",
+                    "text": r["text"][:160], "created_at": r["created_at"]})
+    return out
+
+
 def list_reviews() -> list[dict[str, Any]]:
     """Chat sessions awaiting a human review (escalated), newest first — for the ops console."""
     init()
