@@ -150,6 +150,15 @@ def refund_status_for(customer_id: str, order_id: str | None) -> dict[str, Any]:
     return {"resolutions": resolutions, "pending_review": pending}
 
 
+def session_for_order(customer_id: str, order_id: str) -> dict[str, Any] | None:
+    """The existing conversation for this customer+order, if any (one chat per order)."""
+    init()
+    with _conn() as c:
+        r = c.execute("SELECT * FROM sessions WHERE customer_id=? AND order_id=? "
+                      "ORDER BY created_at DESC LIMIT 1", (customer_id, order_id)).fetchone()
+    return _sess_row(r) if r else None
+
+
 def sessions_for_company(company_id: str) -> list[dict[str, Any]]:
     """All sessions bound to one client brand (for the client portal's stats/chart)."""
     init()

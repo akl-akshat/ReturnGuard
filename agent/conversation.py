@@ -204,30 +204,47 @@ def clarify(text: str, order: dict | None) -> str:
     ])
 
 
+def is_status_query(text: str) -> bool:
+    """A tracking/status ask about the customer's case — cue + topic, not a policy question."""
+    t0 = _norm(text)
+    cue = any(w in t0 for w in ("where", "status", "when will", "when do", "track", "progress",
+                                "update on", "any update", "how long", "not received",
+                                "haven't got", "have not got", "didn't get"))
+    topic = any(w in t0 for w in ("refund", "money back", "my money", "exchange", "replacement",
+                                  "return", "request", "case", "complaint", "order", "issue", "it"))
+    return cue and topic
+
+
 def answer_question(text: str, order: dict | None, policy_ctx: dict | None = None,
                     refund_ctx: dict | None = None) -> str:
     t0 = _norm(text)
-    # Refund-status questions answer from the customer's ACTUAL history, never boilerplate:
-    # a processed resolution reports its action/amount; a case with a specialist says so; and
-    # if nothing is due, we say that clearly and ask for the issue so we can check further.
-    # Status intent only — "what is your refund POLICY" must still go to policy grounding.
-    _status_cue = any(w in t0 for w in ("where", "status", "when will", "when do", "track",
-                                        "not received", "haven't got", "have not got", "didn't get"))
-    if refund_ctx is not None and _status_cue and any(
-            w in t0 for w in ("refund", "money back", "my money")):
+    # Status/tracking questions answer from the customer's ACTUAL history, never boilerplate:
+    # a processed resolution reports what was done (refund amount / exchange / replacement) and
+    # where it stands; a case with a specialist says so; if nothing is due we say that clearly
+    # and ask for the issue. Status intent only — "what is your refund POLICY" still goes to
+    # policy grounding.
+    if refund_ctx is not None and is_status_query(t0):
         res = refund_ctx.get("resolutions") or []
         pend = refund_ctx.get("pending_review") or []
         item = f" for your **{order['title']}**" if order else ""
         if res:
             r0 = res[0]
-            label = _ACTION_LABEL.get(r0["action_type"], (r0["action_type"] or "a resolution").replace("_", " "))
-            amt = f" of ₹{r0['amount']:.0f}" if r0["amount"] else ""
-            return (f"I checked your account{item}: **{label}{amt}** has been processed. "
-                    "Refunds reflect in your original payment method within 3–5 business days of "
-                    "processing. Anything else I can help with?")
+            at = r0.get("action_type") or ""
+            label = _ACTION_LABEL.get(at, (at or "a resolution").replace("_", " "))
+            amt = f" of ₹{r0['amount']:.0f}" if r0.get("amount") else ""
+            if at in ("instant_refund", "partial_refund", "store_credit_refund"):
+                track = ("Refunds reflect in your ReturnGuard wallet immediately and in your bank "
+                         "within 3–5 business days of withdrawal.")
+            elif at in ("free_exchange", "exchange_with_size_guide", "expedited_replacement"):
+                track = ("It's booked and being shipped — you'll get the courier details by email, "
+                         "typically within 24 hours, and delivery in 2–4 days.")
+            else:
+                track = "It's been processed on our side."
+            return (f"Here's the status{item}: **{label}{amt}** is confirmed. {track} "
+                    "If you'd like, I can connect you to a **human specialist** for anything beyond this.")
         if pend:
-            return (f"I checked{item}: your case is **with our specialist team** right now — no money has "
-                    "moved yet, and they'll follow up shortly. I'll make sure your context is with them.")
+            return (f"I checked{item}: your case is **with our specialist team** right now — no action is "
+                    "pending from you, and they'll follow up shortly. I can nudge them with your full context.")
         return (f"I've checked your account{item}: **there's no refund due or in process right now** — "
                 "no claim has been approved on this order yet. Tell me what went wrong (damaged, wrong "
                 "item, quality, size…) and I'll look into it properly.")
@@ -357,11 +374,15 @@ def handle_turn(deps: Deps, session: dict[str, Any], text: str,
         ]
         st["policy_company"] = policy_ctx.get("company")
 
-    # 0) HARD LOCK — this session already resolved once or is with a human. Never act again.
+    # 0) HARD LOCK — this session already resolved once or is with a human. From here the chat
+    # is status-and-human only: track the resolution/case, or reach a specialist. Never act again.
     if st.get("locked"):
         if intent == "thanks":
             r.say("You're welcome! 🙌")
-        elif intent == "question":
+        elif intent == "human":
+            r.say("Of course — I've asked a **human specialist** to pick this thread up. "
+                  "They'll reply right here with your full context. 🙏")
+        elif intent == "question" or is_status_query(text):
             r.say(answer_question(text, order, policy_ctx, refund_ctx))
         else:
             r.say(locked_text())

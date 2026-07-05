@@ -27,7 +27,12 @@ class UploadPolicy(BaseModel):
 
 @router.get("/api/companies")
 def list_companies() -> list[dict]:
-    return policy_store.list_companies()
+    """All client brands, with their credibility-weighted public service rating."""
+    from service import rating_store
+
+    ratings = rating_store.all_company_ratings()
+    return [{**c, **(ratings.get(c["id"]) or {"rating": None, "count": 0})}
+            for c in policy_store.list_companies()]
 
 
 @router.post("/api/companies")

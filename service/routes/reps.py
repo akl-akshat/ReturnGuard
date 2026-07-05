@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import time
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Cookie, HTTPException
 from pydantic import BaseModel, Field
 
-from service import chat_store, policy_store, rep_store
+from service import auth_store, chat_store, policy_store, rep_store
+from service.routes.auth import require_role
 
 router = APIRouter()
 
@@ -33,10 +34,17 @@ def company_reps(company_id: str) -> list[dict]:
 
 
 @router.post("/api/companies/{company_id}/reps")
-def add_rep(company_id: str, body: CreateRep) -> dict:
+def add_rep(company_id: str, body: CreateRep,
+            rg_session: str | None = Cookie(default=None)) -> dict:
+    """A client adds an employee — the rep's login credentials are issued here, shown once."""
+    who = require_role(rg_session, "client", "admin")
     if not policy_store.get_company(company_id):
         raise HTTPException(status_code=404, detail="company not found")
-    return rep_store.add_rep(company_id, body.name)
+    rep = rep_store.add_rep(company_id, body.name)
+    base = auth_store.slugify(body.name) or rep["id"].lower()
+    cred = auth_store.issue_credential("rep", rep["id"], base,
+                                       created_by=f"{who['role']}:{who['id']}")
+    return {**rep, "credentials": cred}   # login + generated password — hand to the employee
 
 
 @router.post("/api/reps/{rep_id}/availability")

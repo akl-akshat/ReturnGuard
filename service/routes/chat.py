@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from agent import conversation, credibility
 from agent.deps import get_deps
-from service import chat_store, platform_store, policy_store, wallet_store
+from service import chat_store, platform_store, policy_store, rating_store, wallet_store
 from tools.actions import execute_action, issue_goodwill_credit
 
 # refund-type actions pay the customer — on the platform they land in the ReturnGuard wallet
@@ -97,9 +97,12 @@ def _order_title(order_id: str | None) -> str:
     return o["title"] if o else "New conversation"
 
 
-def _apply_credibility(customer_id: str, outcome: str) -> None:
-    cur = credibility.Credibility.from_dict(chat_store.get_credibility(customer_id), customer_id)
-    chat_store.save_credibility(credibility.apply_outcome(cur, outcome).to_dict())
+def _apply_credibility(customer_id: str, outcome: str, *, company_id: str | None = None,
+                       reason: str | None = None, actor: str = "system") -> None:
+    """Credibility changes route through the capped applier: no single company can take more
+    than the quarterly cap off a customer, and every change is an audited event."""
+    rating_store.apply_outcome_capped(customer_id, outcome, company_id=company_id,
+                                      reason=reason, actor=actor)
 
 
 @router.get("/api/sessions")
@@ -127,6 +130,14 @@ def create_session(body: CreateSession) -> dict:
     if company_id and not policy_store.get_company(company_id):
         raise HTTPException(status_code=404, detail="company not found")
 
+    # one conversation per order: a duplicate points the caller at the existing thread
+    if body.order_id:
+        existing = chat_store.session_for_order(body.customer_id, body.order_id)
+        if existing:
+            raise HTTPException(status_code=409,
+                                detail={"reason": "conversation_exists",
+                                        "session_id": existing["id"]})
+
     sess = chat_store.create_session(body.customer_id, body.order_id, _order_title(body.order_id),
                                      company_id=company_id)
     chat_store.add_message(
@@ -141,6 +152,7 @@ def get_session(session_id: str) -> dict:
     s = chat_store.get_session(session_id, with_messages=True)
     if not s:
         raise HTTPException(status_code=404, detail="session not found")
+    s["rated"] = rating_store.has_rating(session_id)
     return s
 
 
@@ -300,7 +312,8 @@ def review_session(session_id: str, body: ReviewDecision) -> dict:
         # Reward genuine only when a claim was actually assessed and supported — approving a
         # "customer asked for a human" case (no claim) must not farm credibility upward.
         if (st.get("evidence") or {}).get("verdict") == "supports":
-            _apply_credibility(cust, "genuine")
+            _apply_credibility(cust, "genuine", company_id=session.get("company_id"),
+                               reason="review_approved", actor=f"review:{body.reviewer_id}")
     else:  # deny
         note = f" {body.note}" if body.note else ""
         chat_store.add_message(
@@ -313,10 +326,36 @@ def review_session(session_id: str, body: ReviewDecision) -> dict:
         # Credibility drops ONLY when a human actually disproves a *claim*: the operator marks
         # fraud (harsher), or the escalation was an assessed claim the reviewer rejects. Procedural
         # escalations (asked for a human, declined the remedy, high-value/risk routing) are NOT a
-        # disproof, so they leave credibility unchanged.
+        # disproof, so they leave credibility unchanged. All drops are company-tagged and clamped
+        # by the per-company quarterly cap.
         if body.fraud:
-            _apply_credibility(cust, "false_claim")
+            _apply_credibility(cust, "false_claim", company_id=session.get("company_id"),
+                               reason="review_fraud", actor=f"review:{body.reviewer_id}")
         elif reason in _ADJUDICABLE_REASONS:
-            _apply_credibility(cust, "denied")
+            _apply_credibility(cust, "denied", company_id=session.get("company_id"),
+                               reason="review_denied", actor=f"review:{body.reviewer_id}")
 
     return chat_store.get_session(session_id, with_messages=True)
+
+
+# --------------------------------------------------------------- CSAT rating
+class RateSession(BaseModel):
+    stars: int = Field(..., ge=1, le=5)
+
+
+@router.post("/api/sessions/{session_id}/rate")
+def rate_session(session_id: str, body: RateSession) -> dict:
+    """Anonymous 1–5★ after a session closes. Weighted by the rater's credit score, it feeds
+    the brand's public service rating — one rating per session."""
+    session = chat_store.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="session not found")
+    if session.get("status") not in ("resolved", "denied", "escalated"):
+        raise HTTPException(status_code=409, detail="rate after the session closes")
+    if not session.get("company_id"):
+        raise HTTPException(status_code=400, detail="no brand attached to this session")
+    out = rating_store.rate_session(session_id, session["customer_id"],
+                                    session["company_id"], body.stars)
+    if not out["ok"]:
+        raise HTTPException(status_code=409, detail=out.get("reason", "already rated"))
+    return {**out, "company_rating": rating_store.company_rating(session["company_id"])}
