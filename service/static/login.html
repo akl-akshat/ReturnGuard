@@ -10,52 +10,98 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,400,0,0&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/ui/app.css">
 <style>
-  body{min-height:100vh;display:grid;grid-template-columns:1.08fr .92fr;background:var(--bg)}
-  /* ---------- left: the film ---------- */
-  .film{position:relative;overflow:hidden;background:radial-gradient(120% 90% at 30% 10%,#0d1120 0%,#06070c 60%);
-    display:flex;flex-direction:column;justify-content:space-between;padding:clamp(26px,4vw,48px);color:#eef1f8}
-  #lp{position:absolute;inset:0;width:100%;height:100%}
-  .film>*{position:relative}
+  /* ---------- the whole page is the film: one dark living field ---------- */
+  body{min-height:100vh;margin:0;color:#eef1f8;overflow-x:hidden;
+    background:radial-gradient(120% 90% at 28% 8%,#0d1120 0%,#06070c 58%)}
+  #lp{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}
+  .glow{position:fixed;z-index:0;pointer-events:none;width:60vw;height:60vw;border-radius:50%;
+    background:radial-gradient(closest-side,rgba(59,110,245,.14),transparent 70%);
+    right:-18vw;bottom:-24vw;animation:breathe 9s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.07)}}
+
+  .auth{position:relative;z-index:1;display:grid;grid-template-columns:1.08fr .92fr;min-height:100vh}
+
+  /* ---------- left: copy ---------- */
+  .film{display:flex;flex-direction:column;justify-content:space-between;padding:clamp(26px,4vw,48px)}
   .f-brand{display:flex;align-items:center;gap:12px;font-family:'Space Grotesk',monospace;font-weight:600;letter-spacing:.05em;font-size:15px}
   .f-brand .bx{width:34px;height:34px;border-radius:10px;background:var(--brand);display:grid;place-items:center;
     box-shadow:0 0 26px rgba(59,110,245,.6)}
   .f-brand .bx svg{width:21px;height:21px;display:block}
   .f-mid .kicker{font-family:'Space Grotesk',monospace;font-size:11px;letter-spacing:.32em;color:#9db9ff;text-transform:uppercase;margin-bottom:16px}
-  .f-mid h2{font-family:'Archivo Black',sans-serif;font-size:clamp(34px,3.6vw,54px);line-height:1.02;color:#fff;letter-spacing:-.01em}
+  .f-mid h2{font-family:'Archivo Black',sans-serif;font-size:clamp(34px,3.6vw,54px);line-height:1.02;color:#fff;letter-spacing:-.01em;margin:0}
   .f-mid h2 em{font-style:normal;color:transparent;-webkit-text-stroke:1.6px var(--brand)}
   .f-mid p{color:#a5adc4;max-width:400px;font-size:14.5px;line-height:1.7;margin-top:16px}
   .f-ticks{display:flex;gap:22px;font-family:'Space Grotesk',monospace;font-size:11px;letter-spacing:.2em;color:#8b93a8}
   .f-ticks span{display:flex;align-items:center;gap:8px}
   .f-ticks i{width:7px;height:7px;border-radius:50%;background:var(--brand);box-shadow:0 0 10px var(--brand)}
-  /* ---------- right: the desk ---------- */
+
+  /* ---------- right: the glass desk ---------- */
   .desk{display:grid;place-items:center;padding:34px 22px}
-  .login{width:min(430px,94vw);background:#fff;border:1px solid var(--line);border-radius:22px;
-    box-shadow:0 24px 70px -30px rgba(20,30,55,.35);padding:34px 34px 28px}
+  .login{width:min(438px,94vw);border-radius:24px;padding:34px 34px 28px;position:relative;color:var(--ink);
+    background:rgba(255,255,255,.93);
+    -webkit-backdrop-filter:blur(20px) saturate(1.15);backdrop-filter:blur(20px) saturate(1.15);
+    border:1px solid rgba(255,255,255,.55);
+    box-shadow:0 40px 110px -36px rgba(0,0,0,.75), 0 0 0 1px rgba(59,110,245,.10), 0 0 90px -30px rgba(59,110,245,.45);
+    animation:deskIn .6s cubic-bezier(.2,.75,.25,1) both}
+  @keyframes deskIn{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:none}}
+  .login::before{content:"";position:absolute;inset:0 0 auto 0;height:1.5px;border-radius:24px 24px 0 0;
+    background:linear-gradient(90deg,transparent,rgba(59,110,245,.55),transparent)}
+  .login.shake{animation:shake .4s cubic-bezier(.36,.07,.19,.97)}
+  @keyframes shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
   .lg-brand{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:6px}
-  .lg-brand .kick{margin-bottom:2px}
   .lg-brand h1{font-size:24px;font-weight:800;letter-spacing:-.03em}
   .lg-brand p{margin:0;color:var(--muted);font-size:13px}
-  .roles{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:22px 0 16px}
-  .role{border:1.5px solid var(--line-2);border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;
-    background:#fff;transition:.18s;color:var(--muted)}
-  .role:hover{transform:translateY(-2px);border-color:#c9d4ee}
-  .role .msym{font-size:22px}
-  .role .rl{display:block;font-size:11.5px;font-weight:600;margin-top:4px}
-  .role.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand);box-shadow:0 8px 20px -10px rgba(59,110,245,.5)}
+
+  /* segmented role slider — one glider, four stops */
+  .roles{position:relative;display:grid;grid-template-columns:repeat(4,1fr);background:#edf1f9;border:1px solid #e2e8f4;
+    border-radius:14px;padding:4px;margin:22px 0 16px}
+  .glider{position:absolute;top:4px;bottom:4px;width:calc((100% - 8px)/4);left:4px;border-radius:11px;background:#fff;
+    border:1.5px solid var(--brand);box-shadow:0 8px 20px -10px rgba(59,110,245,.55);
+    transition:transform .38s cubic-bezier(.3,.9,.28,1.15);pointer-events:none}
+  .role{position:relative;z-index:1;border:0;background:none;border-radius:11px;padding:9px 2px 7px;text-align:center;
+    cursor:pointer;color:var(--muted);transition:color .25s;font-family:inherit}
+  .role .msym{font-size:21px}
+  .role .rl{display:block;font-size:11px;font-weight:600;margin-top:3px}
+  .role.on{color:var(--brand)}
+  .role:not(.on):hover{color:var(--ink)}
+
+  /* form zone slides between roles */
+  .fz{transition:opacity .2s ease,transform .2s ease}
+  .fz.out-l{opacity:0;transform:translateX(-16px)}
+  .fz.out-r{opacity:0;transform:translateX(16px)}
   .hintline{font-size:12px;color:var(--faint);margin-top:8px;min-height:16px}
   .lg-foot{margin-top:18px;text-align:center;font-size:12px;color:var(--faint)}
   .lg-foot a{color:var(--brand);font-weight:600}
+
+  /* sign-in button: busy spinner + warp-out */
+  #go{width:100%;padding:12px;margin-top:8px;font-size:14.5px;position:relative;overflow:hidden}
+  #go .spin{display:none;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+    border-radius:50%;animation:rot .7s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+  #go.busy .spin{display:inline-block}
+  #go.busy .msym,#go.busy .golbl{display:none}
+  #warp{position:fixed;inset:0;z-index:50;background:radial-gradient(80% 70% at 50% 50%,#0d1120 0%,#06070c 70%);
+    display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .32s ease}
+  #warp.on{opacity:1;pointer-events:auto}
+  #warp .wbx{width:52px;height:52px;border-radius:14px;background:var(--brand);display:grid;place-items:center;
+    box-shadow:0 0 60px rgba(59,110,245,.8);animation:pulse 1s ease-in-out infinite}
+  #warp .wbx svg{width:30px;height:30px}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+
   @media(max-width:940px){
-    body{grid-template-columns:1fr}
-    .film{min-height:190px;padding:22px 24px}
+    .auth{grid-template-columns:1fr}
+    .film{min-height:150px;padding:22px 24px}
     .f-mid p,.f-ticks{display:none}
-    .f-mid h2{font-size:30px;margin-top:14px}
+    .f-mid h2{font-size:28px;margin-top:14px}
   }
 </style>
 </head>
 <body>
+  <canvas id="lp"></canvas>
+  <div class="glow"></div>
+
+  <main class="auth">
   <section class="film">
-    <canvas id="lp"></canvas>
     <div class="f-brand"><span class="bx"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h2.1l2 9.3a1.7 1.7 0 0 0 1.66 1.35h6.7a1.7 1.7 0 0 0 1.65-1.28L20 8.2H7.1" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.6 10.9l1.9 1.9 3.3-3.6" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10.7" cy="19.3" r="1.45" fill="#fff"/><circle cx="16.9" cy="19.3" r="1.45" fill="#fff"/></svg></span> KARTGUARD</div>
     <div class="f-mid">
       <div class="kicker">Autonomous returns resolution</div>
@@ -67,7 +113,7 @@
   </section>
 
   <section class="desk">
-  <div class="login card">
+  <div class="login" id="loginCard">
     <div class="lg-brand">
       <span class="kick">Sign in</span>
       <h1>Welcome to KartGuard</h1>
@@ -75,34 +121,41 @@
     </div>
 
     <div class="roles" id="roles">
-      <div class="role on" data-role="customer"><span class="msym">person</span><span class="rl">Customer</span></div>
-      <div class="role" data-role="client"><span class="msym">storefront</span><span class="rl">Client</span></div>
-      <div class="role" data-role="rep"><span class="msym">support_agent</span><span class="rl">Rep</span></div>
-      <div class="role" data-role="admin"><span class="msym">shield_person</span><span class="rl">Admin</span></div>
+      <div class="glider" id="glider"></div>
+      <button class="role on" data-role="customer"><span class="msym">person</span><span class="rl">Customer</span></button>
+      <button class="role" data-role="client"><span class="msym">storefront</span><span class="rl">Client</span></button>
+      <button class="role" data-role="rep"><span class="msym">support_agent</span><span class="rl">Rep</span></button>
+      <button class="role" data-role="admin"><span class="msym">shield_person</span><span class="rl">Admin</span></button>
     </div>
 
-    <div class="field">
-      <label id="idLabel">Your account (demo — phone number is your ID)</label>
-      <select id="ident" class="input"></select>
-      <input id="loginId" class="input" style="display:none" autocomplete="username" placeholder="Login ID">
+    <div class="fz" id="fz">
+      <div class="field">
+        <label id="idLabel">Your account (demo — phone number is your ID)</label>
+        <select id="ident" class="input"></select>
+        <input id="loginId" class="input" style="display:none" autocomplete="username" placeholder="Login ID">
+      </div>
+      <div class="field" id="pwField" style="display:none;margin-top:10px">
+        <label>Password</label>
+        <input id="pw" class="input" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="hintline" id="hint"></div>
     </div>
-    <div class="field" id="pwField" style="display:none;margin-top:10px">
-      <label>Password</label>
-      <input id="pw" class="input" type="password" autocomplete="current-password" placeholder="••••••••">
-    </div>
-    <div class="hintline" id="hint"></div>
 
-    <button class="btn btn-primary" style="width:100%;padding:12px;margin-top:8px;font-size:14.5px" onclick="login()">
-      Log in <span class="msym">arrow_forward</span>
+    <button class="btn btn-primary" id="go" onclick="login()">
+      <span class="spin"></span><span class="golbl">Log in</span> <span class="msym">arrow_forward</span>
     </button>
 
     <div class="lg-foot">Demo sign-in: pick an identity, no password. · <a href="/marketing">About KartGuard</a></div>
   </div>
   </section>
+  </main>
+
+  <div id="warp"><div class="wbx"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h2.1l2 9.3a1.7 1.7 0 0 0 1.66 1.35h6.7a1.7 1.7 0 0 0 1.65-1.28L20 8.2H7.1" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.6 10.9l1.9 1.9 3.3-3.6" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10.7" cy="19.3" r="1.45" fill="#fff"/><circle cx="16.9" cy="19.3" r="1.45" fill="#fff"/></svg></div></div>
 
 <script>
 const $=s=>document.querySelector(s);
 const api=(u,o)=>fetch(u,o).then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); });
+const ROLE_ORDER=['customer','client','rep','admin'];
 let role='customer', data={customers:[], companies:[], reps:{}};
 
 async function boot(){
@@ -112,10 +165,16 @@ async function boot(){
   }catch(e){}
   render();
 }
+/* segmented slider: glide the pill, slide the form in the direction of travel */
 document.getElementById('roles').addEventListener('click', e=>{
-  const el=e.target.closest('.role'); if(!el) return;
+  const el=e.target.closest('.role'); if(!el || el.dataset.role===role) return;
+  const from=ROLE_ORDER.indexOf(role), to=ROLE_ORDER.indexOf(el.dataset.role);
   document.querySelectorAll('.role').forEach(r=>r.classList.toggle('on', r===el));
-  role=el.dataset.role; render();
+  document.getElementById('glider').style.transform=`translateX(${to*100}%)`;
+  role=el.dataset.role;
+  const fz=document.getElementById('fz');
+  fz.classList.add(to>from?'out-l':'out-r');
+  setTimeout(()=>{ render(); fz.classList.remove('out-l','out-r'); },190);
 });
 async function render(){
   const sel=$('#ident'), idIn=$('#loginId'), pwF=$('#pwField'), lb=$('#idLabel'), hint=$('#hint');
@@ -146,6 +205,7 @@ async function login(){
   const id = staff ? $('#loginId').value.trim() : $('#ident').value;
   const password = staff ? $('#pw').value : '';
   if(staff && (!id || !password)){ $('#hint').textContent='Enter your login ID and password.'; return; }
+  const go=$('#go'); go.classList.add('busy'); go.disabled=true;
   try{
     const out=await api('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({role, id, password})});
@@ -153,32 +213,39 @@ async function login(){
               : role==='client'   ? `${out.redirect}?co=${encodeURIComponent(out.id)}`
               : role==='rep'      ? `${out.redirect}?rep=${encodeURIComponent(out.id)}`
               : out.redirect;
-    location.href=url;
-  }catch(e){ $('#hint').textContent = staff ? 'Invalid ID or password.' : 'Could not sign in — is the identity valid?'; }
+    document.getElementById('warp').classList.add('on');       // smooth warp into the workspace
+    setTimeout(()=>{ location.href=url; },330);
+  }catch(e){
+    go.classList.remove('busy'); go.disabled=false;
+    $('#hint').textContent = staff ? 'Invalid ID or password.' : 'Could not sign in — is the identity valid?';
+    const card=$('#loginCard'); card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+  }
 }
 document.addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 boot();
 
-/* ambient particle drift on the film panel — always alive, sub-1ms per frame */
+/* full-page ambient field — always alive (rAF + watchdog for throttled environments) */
 (function(){
-  const c=document.getElementById('lp'),x=c.getContext('2d');let W=0,H=0,P=[];
+  const c=document.getElementById('lp'),x=c.getContext('2d');let W=0,H=0,P=[],last=0;
   function rs(){W=c.clientWidth;H=c.clientHeight;const d=Math.min(devicePixelRatio||1,2);
     c.width=W*d;c.height=H*d;x.setTransform(d,0,0,d,0,0);
-    if(!P.length)for(let i=0;i<170;i++)P.push({x:Math.random()*1.2-0.1,y:Math.random()*1.2-0.1,
-      s:.4+Math.random()*1.5,v:.008+Math.random()*.02,w:Math.random()*6.3});}
+    if(!P.length)for(let i=0;i<230;i++)P.push({x:Math.random()*1.2-0.1,y:Math.random()*1.2-0.1,
+      s:.4+Math.random()*1.6,v:.008+Math.random()*.022,w:Math.random()*6.3});}
   addEventListener('resize',rs);addEventListener('load',rs);rs();
-  (function f(t){
+  function draw(t){
     if(c.width===0&&c.clientWidth>0)rs();
     x.clearRect(0,0,W,H);
     for(const p of P){
       p.y-=p.v/60; if(p.y<-0.1){p.y=1.1;p.x=Math.random()*1.2-0.1;}
       const px=(p.x+Math.sin(t*0.0004+p.w)*0.02)*W, py=p.y*H;
-      x.globalAlpha=.25+.45*Math.abs(Math.sin(t*.001+p.w));
+      x.globalAlpha=.22+.42*Math.abs(Math.sin(t*.001+p.w));
       x.fillStyle=p.w%1<.12?'#dfe7ff':'#3b6ef5';
       x.beginPath();x.arc(px,py,p.s,0,7);x.fill();
     }
-    x.globalAlpha=1;requestAnimationFrame(f);
-  })(0);
+    x.globalAlpha=1;
+  }
+  (function f(t){ last=t; draw(t); requestAnimationFrame(f); })(0);
+  setInterval(()=>{ if(performance.now()-last>400) draw(performance.now()); },50);
 })();
 </script>
 </body>
