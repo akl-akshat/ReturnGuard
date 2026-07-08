@@ -138,7 +138,7 @@ def test_ticket_lifecycle_sealed_until_draw_then_everyone_wins(client, monkeypat
     monkeypatch.setenv("RG_DRAW_DELAY_S", "0")
     t2 = client.post(f"/api/wallet/{u['id']}/lottery").json()["ticket"]
     r = client.post(f"/api/wallet/{u['id']}/tickets/{t2['id']}/reveal").json()
-    assert r["ok"] and r["prize"]["value"] >= 5.0 and r["prize"]["voucher_code"].startswith("KG-")
+    assert r["ok"] and r["prize"]["value"] >= 5.0 and r["prize"]["voucher_code"].startswith("RG-")
     # idempotent: second reveal returns the same prize, no double-grant
     r2 = client.post(f"/api/wallet/{u['id']}/tickets/{t2['id']}/reveal").json()
     assert r2["prize"]["voucher_code"] == r["prize"]["voucher_code"]
@@ -183,7 +183,7 @@ def test_role_logins_route_to_role_dashboards(client):
 
 
 def test_role_pages_are_served(client):
-    assert "KartGuard" in client.get("/").text                  # login
+    assert "ReturnGuard" in client.get("/").text                  # login
     assert "My Dashboard" in client.get("/app").text
     assert "Client Console" in client.get("/client").text
     assert "My Complaints" in client.get("/rep").text

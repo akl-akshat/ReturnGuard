@@ -303,7 +303,7 @@ def test_how_do_i_photograph_a_smell_gets_guidance_not_policy_dump(client):
     assert r["phase"] == "awaiting_evidence"                            # gate still holds
     # ...and the verified claim still resolves with wallet-truthful copy
     r = _turn(client, s["id"], evidence=STRONG)
-    assert any("KartGuard wallet" in m["text"] for m in r["messages"])
+    assert any("ReturnGuard wallet" in m["text"] for m in r["messages"])
     assert not any("original payment method" in m["text"] for m in r["messages"])
 
 

@@ -299,10 +299,10 @@ def wheel_config() -> dict[str, Any]:
     return {"segments": [{"label": s[0], "kind": s[1], "value": s[2]} for s in _SPIN_SEGMENTS]}
 
 
-def _grant_voucher(c, user_id: str, amount: float, brand: str = "KartGuard Rewards") -> str:
+def _grant_voucher(c, user_id: str, amount: float, brand: str = "ReturnGuard Rewards") -> str:
     """A prize voucher = a coupon the platform funds. No wallet debit — it lands as a
     scratchable boarding pass in the customer's wallet, brand-redeemable like any coupon."""
-    code = "KG-" + uuid.uuid4().hex[:4].upper() + "-" + uuid.uuid4().hex[:4].upper()
+    code = "RG-" + uuid.uuid4().hex[:4].upper() + "-" + uuid.uuid4().hex[:4].upper()
     c.execute("INSERT INTO coupons (code, user_id, brand, amount, revealed, created_at) VALUES (?,?,?,?,0,?)",
               (code, user_id, brand, amount, _now()))
     return code
@@ -457,7 +457,7 @@ def reveal_ticket(user_id: str, ticket_id: str) -> dict[str, Any]:
             return {"ok": True, "already": True,
                     "prize": {"label": r["outcome_label"], "kind": r["outcome_kind"],
                               "value": r["outcome_value"], "voucher_code": r["voucher_code"]}}
-        brand = "KartGuard Dining" if r["outcome_kind"] == "grand" else "KartGuard Rewards"
+        brand = "ReturnGuard Dining" if r["outcome_kind"] == "grand" else "ReturnGuard Rewards"
         voucher = _grant_voucher(c, user_id, r["outcome_value"], brand=brand)
         c.execute("UPDATE lottery_tickets SET revealed=1, voucher_code=? WHERE id=?", (voucher, r["id"]))
     return {"ok": True, "prize": {"label": r["outcome_label"], "kind": r["outcome_kind"],

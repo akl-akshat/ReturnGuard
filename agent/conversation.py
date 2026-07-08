@@ -90,8 +90,8 @@ _ACTION_LABEL = {
     "exchange_with_size_guide": "a free size exchange for the correct size",
     "free_exchange": "a free exchange",
     "expedited_replacement": "a priority replacement at no cost",
-    "instant_refund": "a full refund, credited straight to your KartGuard wallet",
-    "partial_refund": "a partial refund, credited to your KartGuard wallet",
+    "instant_refund": "a full refund, credited straight to your ReturnGuard wallet",
+    "partial_refund": "a partial refund, credited to your ReturnGuard wallet",
     "store_credit_refund": "store credit",
     "retention_coupon": "a discount coupon to keep your order",
     "goodwill_credit": "a goodwill credit",
@@ -284,7 +284,7 @@ def answer_question(text: str, order: dict | None, policy_ctx: dict | None = Non
         return "Sure — pick the order on the left and I'll pull up your options and its return window."
     win = "still open" if _within_window(order) else "closed"
     if any(w in t for w in ("where", "status", "how long")):
-        return (f"For **{order['title']}**, if a refund is due it lands in your **KartGuard wallet** instantly "
+        return (f"For **{order['title']}**, if a refund is due it lands in your **ReturnGuard wallet** instantly "
                 "(withdraw to your bank anytime). Your return window is currently " + win + ".")
     return (f"For **{order['title']}** (₹{order['price']:.0f}, {order['category']}), the right resolution depends on "
             "what's wrong: an exchange for a size/fit issue, a like-for-like replacement for a genuine defect or "
@@ -379,8 +379,8 @@ def result_text(action: dict, order: dict) -> str:
         "exchange_with_size_guide": "✅ Done! I've arranged a **free exchange for the correct size** with a size guide — you'll get shipping details by email.",
         "free_exchange": "✅ Your **free exchange** is booked — details are on the way by email.",
         "expedited_replacement": "✅ Sorted — a **priority replacement** is on its way at no cost. I've added a small goodwill credit for the trouble.",
-        "instant_refund": f"✅ Your **refund of ₹{amt:.0f}** is in your **KartGuard wallet** right now — spend it at any brand here, or withdraw to your bank anytime.",
-        "partial_refund": f"✅ A **partial refund of ₹{amt:.0f}** just landed in your **KartGuard wallet**.",
+        "instant_refund": f"✅ Your **refund of ₹{amt:.0f}** is in your **ReturnGuard wallet** right now — spend it at any brand here, or withdraw to your bank anytime.",
+        "partial_refund": f"✅ A **partial refund of ₹{amt:.0f}** just landed in your **ReturnGuard wallet**.",
         "store_credit_refund": f"✅ **₹{amt:.0f} store credit** has been added to your account.",
         "retention_coupon": f"✅ I've applied a **₹{amt:.0f} coupon** to your account — thanks for keeping your order!",
         "goodwill_credit": f"✅ A **₹{amt:.0f} goodwill credit** has been added, with our apologies.",

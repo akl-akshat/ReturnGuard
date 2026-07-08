@@ -1,13 +1,11 @@
-# KartGuard
+# ReturnGuard
 
 **A fraud-resistant returns & refunds platform — where an autonomous agent resolves disputes
 for many companies at once, and money only moves through deterministic gates.**
 
-*(Formerly ReturnGuard — the Python package name and a few document filenames keep the original spelling.)*
-
 Brands sign up, upload the returns policy their legal team actually wrote (**PDF, Word,
 Markdown — parsed, chunked, embedded**), and plug their orders in. From that moment,
-KartGuard's support agent handles their customers' return/refund/replacement conversations
+ReturnGuard's support agent handles their customers' return/refund/replacement conversations
 **according to that document** — demanding evidence before money moves, learning each
 customer's credibility across every brand on the platform, and deferring the consequential
 minority to that brand's own support reps with full context. Refunds land in an in-app wallet
@@ -21,7 +19,7 @@ guardrails**, **server-assessed evidence gating**, a **cross-brand credibility l
 **per-tenant policy RAG**, **human-in-the-loop escalation**, full observability, and an
 evaluation harness with hard safety gates — **295 automated tests**, red-teamed twice.
 
-[![CI](https://github.com/akl-akshat/KartGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/akl-akshat/KartGuard/actions/workflows/ci.yml)
+[![CI](https://github.com/akl-akshat/ReturnGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/akl-akshat/ReturnGuard/actions/workflows/ci.yml)
 
 **Live demo:** [returnguard-99qu.onrender.com](https://returnguard-99qu.onrender.com) — free
 tier, so the first request after idle takes ~30–50s to wake. Sign in as any side of the
@@ -48,7 +46,7 @@ refund), then watch the approved refund land in your wallet.
 In Indian e-commerce, fashion return rates run 25–35% (≈40% in festive periods); COD
 return-to-origin runs 20–40% of COD orders; sellers lose an estimated 8–15% of monthly revenue
 to unrecovered return losses — a meaningful share of it to **refund abuse**: false damage
-claims, serial returners, "no-no-no-until-full-refund" pressure on support agents. KartGuard
+claims, serial returners, "no-no-no-until-full-refund" pressure on support agents. ReturnGuard
 replaces the implicit human decision step with an **auditable, constrained, autonomous agent**
 that is deliberately hard to defraud — and because credibility is scored **per person across
 every brand on the platform**, a fraudster burned at two brands is auto-distrusted at the
@@ -120,7 +118,7 @@ in full), so the marketplace stays troll-resistant.
 ## Multi-tenant policy RAG
 
 Upload the policy file a legal team actually produces — a long PDF, a DOCX with headings and
-tables, or Markdown. KartGuard extracts real text (per-page PDF parsing with
+tables, or Markdown. ReturnGuard extracts real text (per-page PDF parsing with
 sentence-boundary paragraph rebuilding; DOCX headings/tables preserved as structure), chunks
 it into paragraphs, embeds them, and from the next message on, every customer query on a
 session bound to that brand is semantically searched against **that brand's** chunks — the top
@@ -170,7 +168,7 @@ discretion.
 
 ## Quickstart (offline — no Docker, no API key)
 
-KartGuard runs fully offline using a deterministic **stub LLM** and local stores, so the
+ReturnGuard runs fully offline using a deterministic **stub LLM** and local stores, so the
 whole platform and its evaluation harness are reproducible out of the box.
 
 ```bash
